@@ -12,10 +12,13 @@ def set_accrued_gradients(grad):
 	accrued_gradients += grad
 
 def set_parameters(params):
-	global parameters
+	global parameters # Needed to modify parameters globally
 	parameters = params
 
 def getParametersFromParamServer():
+	# Google hosted a separate server for hosting parameters
+	# We can make these braodcast variables which this function
+	# 	reads in Spark
 	#TODO
 
 def startAsynchronouslyFetchingParameters(parameters):
@@ -49,15 +52,16 @@ if __name__ == "__main__":
 
 	sc = SparkContext(appName="Spark SGD")
 	cached_data = sc.textFile(logFile).cache()
-		
+	broadcast_parameters = sc.broadcast(parameters)		
+
 	step = 0
 	accrued_gradients = get_accrued_gradients()
 	while(True):
 		#TODO - stop after X steps?
 		if step%n_fetch == 0:
-			startAsynchronouslyFetchingParameters(parameters)
+			startAsynchronouslyFetchingParameters(broadcast_parameters)
 		data = getNextMinibatch()
-		gradient = computeGradient(parameters,data)
+		gradient = computeGradient(broadcast_parameters,data)
 		set_accrued_gradients(gradient)
 		parameters -= alpha*gradient #TODO
 		if step%n_push == 0:
