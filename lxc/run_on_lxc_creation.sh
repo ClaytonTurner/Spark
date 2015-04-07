@@ -6,6 +6,7 @@ apt-get --assume-yes install g++
 apt-get --assume-yes install python-dev
 apt-get --assume-yes install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
 apt-get --assume-yes install gfortran
+pip install --user --install-option="--prefix=" -U scikit-learn
 wget http://www.netlib.org/blas/blas.tgz
 gunzip blas.tgz
 tar -xf blas.tar
