@@ -3,7 +3,10 @@ from pyspark import SparkContext
 from sklearn import linear_model as lm # for gradient descent; adapted from https://gist.github.com/MLnick/4707012
 from sklearn.base import copy
 
-parameters = None #TODO
+#TODO
+# Add adagrad
+
+parameters = None #TODO Needs to represent weights and layers
 accrued_gradients = 0.
 
 def get_accrued_gradients():
@@ -32,10 +35,11 @@ def startAsynchronouslyPushingGradients(accrued_gradients):
 	accrued_gradients = 0
 
 def sendGradientsToParamsServer(accrued_gradients):
-	#TODO
+	set_accrued_gradients(accrued_gradients)
 
-def getNextMinibatch():
+def getNextMinibatch(data):
 	#TODO
+	yield data
 
 def computeGradient(parameters,data):
 	#TODO
@@ -57,7 +61,7 @@ if __name__ == "__main__":
 		print >> sys.stderr, "Usage: spark_sgd.py <data_file> <alpha> <n_fetch> <n_push>"
 		exit(-1)
 
-	worker_count = 4 # Not sure what to do about this
+	slices = 10 # Arbitrary - Empirically tune for performance
 
 	#data_file = "/data/spark/Spark/iris_labelFirst.data" 	
 	data_file = str(sys.argv[1])
@@ -70,16 +74,18 @@ if __name__ == "__main__":
 	broadcast_parameters = sc.broadcast(parameters)		
 
 	step = 0
-	accrued_gradients = get_accrued_gradients()
+	accrued_gradients = sc.broadcast(get_accrued_gradients())
 	while(True):
 		#TODO - stop after X steps?
+		if step > 1000:
+			break # THIS IS TEMPORARY - DEV ONLY
 		if step%n_fetch == 0: # Always true in fixed case
 			startAsynchronouslyFetchingParameters(broadcast_parameters)
-		data = getNextMinibatch()
-		gradient = sc.parallelize(data) \
+		data = getNextMinibatch(cached_data)
+		gradient = sc.parallelize(data, numSlices=slices) \
 			.mapPartitions(lambda x: computeGradient(broadcast_parameters,x) \
 			.reduce(lambda x, y: merge(x,y))
-		gradient = avg_model(gradient, worker_count)
+		gradient = avg_model(gradient, slices)
 		set_accrued_gradients(gradient)
 		broadcast_parameters -= alpha*gradient #TODO
 		if step%n_push == 0: # Always true in fixed case
