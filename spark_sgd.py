@@ -2,12 +2,20 @@ import sys
 from pyspark import SparkContext
 from sklearn import linear_model as lm # for gradient descent; adapted from https://gist.github.com/MLnick/4707012
 from sklearn.base import copy
+import random
+from math import sqrt
 
 #TODO
 # Add adagrad
 
-parameters = None #TODO Needs to represent weights and layers
+parameters = None
 accrued_gradients = 0.
+
+def init_parameters(data_len):
+	hidden_layers = [100,100,100]
+	weight_dist = 1./sqrt(data_len)
+	weights = [[random.uniform(-weight_dist,weight_dist)] for x in range(len(hidden_layers))]
+	return {"hidden_layers":hidden_layers,"weights":weights}
 
 def get_accrued_gradients():
 	global accrued_gradients # Best to be sure of what I'm returning
@@ -71,6 +79,7 @@ if __name__ == "__main__":
 
 	sc = SparkContext(appName="Spark SGD")
 	cached_data = sc.textFile(logFile).cache()
+	parameters = init_parameters(len(cached_data))
 	broadcast_parameters = sc.broadcast(parameters)		
 
 	step = 0
