@@ -4,19 +4,21 @@ from sklearn import linear_model as lm # for gradient descent; adapted from http
 from sklearn.base import copy
 import random
 from math import sqrt
+import mlp
+import numpy
 
 #TODO
 # Add adagrad
 
-parameters = None
 accrued_gradients = 0.
 
-def init_parameters(data_len):
-	hidden_layers = [100,100,100]
-	weight_dist = 1./sqrt(data_len)
-	weights = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
+# This isn't needed since we're using the mlp for theano
+#def init_parameters(data_len):
+#	hidden_layers = [100,100,100]
+#	weight_dist = 1./sqrt(data_len)
+#	weights = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
 	# so we have 4 sets of weights since we need to set up the output layer
-	return {"hidden_layers":hidden_layers,"weights":weights}
+#	return {"hidden_layers":hidden_layers,"weights":weights}
 
 def get_accrued_gradients():
 	global accrued_gradients # Best to be sure of what I'm returning
@@ -80,11 +82,19 @@ if __name__ == "__main__":
 
 	sc = SparkContext(appName="Spark SGD")
 	cached_data = sc.textFile(logFile).cache()
-	parameters = init_parameters(len(cached_data))
 	broadcast_parameters = sc.broadcast(parameters)		
 
 	step = 0
 	accrued_gradients = sc.broadcast(get_accrued_gradients())
+
+	nn = mlp.MLP(
+		rng=numpy.random.RandomState(42),
+		input=,
+		n_in=,
+		n_hidden=,
+		n_out=
+	)
+
 	while(True):
 		#TODO - stop after X steps?
 		if step > 1000:
