@@ -66,7 +66,7 @@ def avg_model(sgd, slices): # Part of aforementioned adaptation
 	sgd.coef_ /= slices
 	sgd.intercept_ /= slices
 	return sgd
-
+'''
 if __name__ == "__main__":
 	if len(sys.argv) != 5:
 		print >> sys.stderr, "Usage: spark_sgd.py <data_file> <alpha> <n_fetch> <n_push>"
@@ -113,3 +113,4 @@ if __name__ == "__main__":
 		step += 1
 
 	sc.stop()
+'''

@@ -27,7 +27,9 @@ import theano.tensor as T
 
 
 from logistic_sgd import LogisticRegression, load_data
+from spark_mlp_helper import *
 
+from pyspark import SparkContext
 
 # start-snippet-1
 class HiddenLayer(object):
@@ -194,7 +196,11 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
     :param dataset: the path of the MNIST dataset file from
                  http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz
    """
-    datasets = load_data(dataset)
+    
+    sc = SparkContext(appName="Spark_MLP")	
+
+    #datasets = load_data(dataset)
+    datasets = sc.textFile(dataset).mapPartitions(load_data).cache()
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
@@ -324,8 +330,9 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
             if (iter + 1) % validation_frequency == 0:
                 # compute zero-one loss on validation set
-                validation_losses = [validate_model(i) for i
-                                     in xrange(n_valid_batches)]
+                #validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
+		val_loss_rdd = sc.parallelize([x for x in range(n_valid_batches)])
+		validation_losses = val_loss_rdd.map(lambda x: validate_model(x))
                 this_validation_loss = numpy.mean(validation_losses)
 
                 print(
