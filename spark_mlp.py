@@ -333,7 +333,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
                 #validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
 		val_loss_rdd = sc.parallelize([x for x in range(n_valid_batches)])
 		validation_losses = val_loss_rdd.map(lambda x: validate_model(x))
-                this_validation_loss = numpy.mean(validation_losses)
+                #this_validation_loss = numpy.mean(validation_losses)
+		this_validation_loss = validation_losses.mean()
 
                 print(
                     'epoch %i, minibatch %i/%i, validation error %f %%' %
@@ -358,9 +359,12 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
                     best_iter = iter
 
                     # test it on the test set
-                    test_losses = [test_model(i) for i
-                                   in xrange(n_test_batches)]
-                    test_score = numpy.mean(test_losses)
+                    #test_losses = [test_model(i) for i in xrange(n_test_batches)]
+              	    test_loss_rdd = sc.parallelize([x for x in range(n_test_batches)])
+                    test_losses = test_loss_rdd.map(lambda x: test_model(x))
+
+		    #test_score = numpy.mean(test_losses)
+		    test_score = test_losses.mean()
 
                     print(('     epoch %i, minibatch %i/%i, test error of '
                            'best model %f %%') %
