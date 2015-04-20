@@ -200,16 +200,19 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
     sc = SparkContext(appName="Spark_MLP")	
 
     #datasets = load_data(dataset)
-    datasets = sc.textFile(dataset).mapPartitions(load_data).cache()
+    datasets = sc.textFile(dataset).mapPartitions(load_data)
 
-    train_set_x, train_set_y = datasets[0]
-    valid_set_x, valid_set_y = datasets[1]
-    test_set_x, test_set_y = datasets[2]
+    train_set_x = datasets[0][0].cache()
+    train_set_y = datasets[0][1].cache()
+    valid_set_x = datasets[1][0].cache()
+    valid_set_y = datasets[1][1].cache()
+    test_set_x = datasets[2][0].cache()
+    test_set_y = datasets[2][1].cache()
 
     # compute number of minibatches for training, validation and testing
-    n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-    n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-    n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
+    n_train_batches = sc.broadcast(train_set_x.get_value(borrow=True).shape[0] / batch_size)
+    n_valid_batches = sc.broadcast(valid_set_x.get_value(borrow=True).shape[0] / batch_size)
+    n_test_batches = sc.broadcast(test_set_x.get_value(borrow=True).shape[0] / batch_size)
 
     ######################
     # BUILD ACTUAL MODEL #
