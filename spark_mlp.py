@@ -27,7 +27,6 @@ import theano.tensor as T
 
 
 from logistic_sgd import LogisticRegression, load_data
-from spark_mlp_helper import *
 
 from pyspark import SparkContext
 

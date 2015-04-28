@@ -12,12 +12,12 @@ import numpy
 
 accrued_gradients = 0.
 
-#def init_parameters(data_len):
-#	hidden_layers = [100,100,100]
-#	weight_dist = 1./sqrt(data_len)
-#	weights = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
+def init_parameters(data_len):
+	hidden_layers = [100,100,100]
+	weight_dist = 1./sqrt(data_len)
+	weights = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
 	# so we have 4 sets of weights since we need to set up the output layer
-#	return {"hidden_layers":hidden_layers,"weights":weights}
+	return {"hidden_layers":hidden_layers,"weights":weights}
 
 def get_accrued_gradients():
 	global accrued_gradients # Best to be sure of what I'm returning
@@ -62,7 +62,7 @@ def avg_model(sgd, slices): # Part of aforementioned adaptation
 	sgd.coef_ /= slices
 	sgd.intercept_ /= slices
 	return sgd
-'''
+
 if __name__ == "__main__":
 	if len(sys.argv) != 5:
 		print >> sys.stderr, "Usage: spark_sgd.py <data_file> <alpha> <n_fetch> <n_push>"
@@ -73,40 +73,30 @@ if __name__ == "__main__":
 	#data_file = "/data/spark/Spark/iris_labelFirst.data" 	
 	data_file = str(sys.argv[1])
 	alpha = float(sys.argv[2])
-	n_fetch = int(sys.argv[3]) # Google fixed to 1 in paper
-	n_push = int(sys.argv[4]) # Google fixed to 1 in paper
-
-	sc = SparkContext(appName="Spark SGD")
-	cached_data = sc.textFile(logFile).cache()
-	broadcast_parameters = sc.broadcast(parameters)		
+	n_fetch = 1 #int(sys.argv[3]) # Google fixed to 1 in paper
+	n_push = 1 #int(sys.argv[4]) # Google fixed to 1 in paper
 
 	step = 0
-	accrued_gradients = sc.broadcast(get_accrued_gradients())
+	accrued_gradients = get_accrued_gradients()
 
-	nn = mlp.MLP(
-		rng=numpy.random.RandomState(42),
-		input=,
-		n_in=,
-		n_hidden=,
-		n_out=
-	)
+	#TODO NN initialization
 
 	while(True):
-		#TODO - stop after X steps?
-		if step > 1000:
-			break # THIS IS TEMPORARY - DEV ONLY
+		if step == 0:
+			parameters = init_parameters()
+		if step > 1000: # This can be tweaked
+			break 
 		if step%n_fetch == 0: # Always true in fixed case
-			startAsynchronouslyFetchingParameters(broadcast_parameters)
-		data = getNextMinibatch(cached_data)
-		gradient = sc.parallelize(data, numSlices=slices) \
-			.mapPartitions(lambda x: computeGradient(broadcast_parameters,x) \
-			.reduce(lambda x, y: merge(x,y))
+			startAsynchronouslyFetchingParameters(parameters)
+		data = getNextMinibatch(data)
+		#gradient = sc.parallelize(data, numSlices=slices) \
+		#	.mapPartitions(lambda x: computeGradient(parameters,x) \
+		#	.reduce(lambda x, y: merge(x,y))
 		gradient = avg_model(gradient, slices)
 		set_accrued_gradients(gradient)
-		broadcast_parameters -= alpha*gradient #TODO
+		parameters -= alpha*gradient #TODO as parameters is currently a dictionary
 		if step%n_push == 0: # Always true in fixed case
 			startAsynchronouslyPushingGradients(accrued_gradients)
 		step += 1
 
-	sc.stop()
-'''
+
