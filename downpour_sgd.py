@@ -12,7 +12,6 @@ import numpy
 
 accrued_gradients = 0.
 
-# This isn't needed since we're using the mlp for theano
 #def init_parameters(data_len):
 #	hidden_layers = [100,100,100]
 #	weight_dist = 1./sqrt(data_len)
@@ -32,13 +31,10 @@ def set_parameters(params):
 	global parameters # Needed to modify parameters globally
 	parameters = params
 
-#def getParametersFromParamServer():
-	# Google hosted a separate server for hosting parameters
-	# We use broadcast variables instead so we don't need
-	# 	this function
+def getParametersFromParamServer():
 
 def startAsynchronouslyFetchingParameters(parameters):
-	#params = getParametersFromParamServer()
+	params = getParametersFromParamServer()
 	set_parameters(parameters)
 
 def startAsynchronouslyPushingGradients(accrued_gradients):
