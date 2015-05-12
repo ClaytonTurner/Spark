@@ -12,7 +12,7 @@ if [[ $# != 1 ]]; then
 fi
 
 NEXT_LETTER=$1
-MNAME=spark6$NEXT_LETTER
+MNAME=downpour_sgd$NEXT_LETTER
 
 lxc-create -t debian -n $MNAME
 cat << EOF >>/var/lib/lxc/$MNAME/config
@@ -25,6 +25,6 @@ EOF
 echo "Created machine and fixed configuration."
 echo "Log in with login root/root, then run passwd"
 echo "And use ifconfig and note the IP for the machine"
-lxc-execute -n spark6$NEXT_LETTER ./run_on_lxc_creation.sh
+lxc-execute -n downpour_sgd$NEXT_LETTER sh ./run_on_lxc_creation.sh
 lxc-start -n $MNAME
 
