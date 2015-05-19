@@ -7,7 +7,7 @@
 FROM ubuntu
 
 # Set the file maintainer (your name - the file's author)
-birg Clayton Turner
+MAINTAINER Clayton Turner
 
 # Update the default application repository sources list
 RUN apt-get update
