@@ -4,25 +4,38 @@
 ############################################################
 
 # Set the base image to use to Ubuntu
-FROM ubuntu
+#FROM ubuntu
+FROM phusion/baseimage:0.9.16
 
 # Set the file maintainer (your name - the file's author)
 MAINTAINER Clayton Turner
 
 # Update the default application repository sources list
-RUN apt-get update
+#RUN apt-get update
 
 # Install Memcached
-RUN apt-get install -y memcached
+#RUN apt-get install -y memcached
 
 # Port to expose (default: 11211)
 EXPOSE 11211
 
 # Default Memcached run command arguments
-CMD ["-u", "root", "-m", "128"]
+#CMD ["-u", "root", "-m", "128"]
+CMD ["/sbin/my_init"]
+
+# Add my stuff
+RUN mkdir -p /etc/my_init.d
+ADD client.sh /etc/my_init.d/client.sh
+ADD client.py /usr/local/sbin/client.py
 
 # Set the user to run Memcached daemon
+USER root
+ADD sudoers.txt /etc/sudoers
+RUN chmod 440 /etc/sudoers
 USER daemon
 
 # Set the entrypoint to memcached binary
 ENTRYPOINT memcached
+
+# Clean up APT when done
+RUN sudo apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
