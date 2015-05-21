@@ -24,9 +24,10 @@ EXPOSE 11211
 CMD ["/sbin/my_init"]
 
 # Add my stuff
-RUN mkdir -p /etc/my_init.d
-ADD client.sh /etc/my_init.d/client.sh
-ADD client.py /usr/local/sbin/client.py
+#RUN mkdir -p /etc/my_init.d
+#ADD client.sh /etc/my_init.d/client.sh
+#ADD client.py /usr/local/sbin/client.py
+COPY client* /tmp/spark/
 
 # Set the user to run Memcached daemon
 USER root
@@ -35,7 +36,8 @@ RUN chmod 440 /etc/sudoers
 USER daemon
 
 # Set the entrypoint to memcached binary
-ENTRYPOINT memcached
+#ENTRYPOINT memcached
+CMD ["sudo","sh","/tmp/spark/client.sh"]
 
 # Clean up APT when done
 RUN sudo apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
