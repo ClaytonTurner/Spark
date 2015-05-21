@@ -1,7 +1,7 @@
 #!/bin/sh
 echo "Running script"
-# run application you want to start
-python /usr/local/sbin/client.py & 
+# run applications 
+python -u /tmp/spark/client.py # -u flag unbuggers output so we can capture it in logs
  
 exit 0
 

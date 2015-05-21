@@ -8,13 +8,13 @@
 FROM phusion/baseimage:0.9.16
 
 # Set the file maintainer (your name - the file's author)
-MAINTAINER Clayton Turner
+MAINTAINER Clayton Turner <caturner3@g.cofc.edu>
 
 # Update the default application repository sources list
-#RUN apt-get update
+RUN apt-get update
 
-# Install Memcached
-#RUN apt-get install -y memcached
+# Installs
+RUN apt-get -y install python
 
 # Port to expose (default: 11211)
 EXPOSE 11211
@@ -41,6 +41,6 @@ USER daemon
 
 # Set the entrypoint to memcached binary
 #ENTRYPOINT memcached
-CMD ["sudo","sh","/tmp/spark/docker_launch.sh"]
-CMD ["echo","End of Dockerfile"]
+RUN sudo sh /tmp/spark/docker_launch.sh
+RUN echo "End of Dockerfile"
 
