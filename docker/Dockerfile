@@ -21,13 +21,17 @@ EXPOSE 11211
 
 # Default Memcached run command arguments
 #CMD ["-u", "root", "-m", "128"]
-CMD ["/sbin/my_init"]
+#CMD ["/sbin/my_init"]
+
+# Clean up APT when done - maybe do this at the end, but we're storing stuff in /tmp/*
+RUN sudo apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Add my stuff
 #RUN mkdir -p /etc/my_init.d
 #ADD client.sh /etc/my_init.d/client.sh
 #ADD client.py /usr/local/sbin/client.py
-COPY client* /tmp/spark/
+COPY docker_launch.sh /tmp/spark/
+COPY client.py /tmp/spark/
 
 # Set the user to run Memcached daemon
 USER root
@@ -37,7 +41,6 @@ USER daemon
 
 # Set the entrypoint to memcached binary
 #ENTRYPOINT memcached
-CMD ["sudo","sh","/tmp/spark/client.sh"]
+CMD ["sudo","sh","/tmp/spark/docker_launch.sh"]
+CMD ["echo","End of Dockerfile"]
 
-# Clean up APT when done
-RUN sudo apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
