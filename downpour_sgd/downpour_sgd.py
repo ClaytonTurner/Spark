@@ -6,17 +6,26 @@ import random
 from math import sqrt
 import mlp
 import numpy
+from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
 
 #TODO
 # Add adagrad
 
 accrued_gradients = 0.
+PARAM_IP = "192.168.137.50"
+PARAM_UPDATE_PORT = 45001
+PARAM_READ_PORT = 45002
+SIZE = 1024 # Probably have to increase this or change implementation with adagrad
+hostname = gethostbyname('0.0.0.0')
+my_socket = socket(AF_INET, SOCK_DGRAM)
+my_socket.bind( (hostname, PORT) )
 
 def init_parameters(data_len):
 	hidden_layers = [100,100,100]
 	weight_dist = 1./sqrt(data_len)
 	weights = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
 	# so we have 4 sets of weights since we need to set up the output layer
+	# Now we push the initialized updates to the param server 
 	return {"hidden_layers":hidden_layers,"weights":weights}
 
 def get_accrued_gradients():
@@ -32,6 +41,7 @@ def set_parameters(params):
 	parameters = params
 
 def getParametersFromParamServer():
+	
 
 def startAsynchronouslyFetchingParameters(parameters):
 	params = getParametersFromParamServer()
