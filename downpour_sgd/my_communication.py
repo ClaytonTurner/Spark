@@ -1,4 +1,3 @@
-
 from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
 import sys
 
