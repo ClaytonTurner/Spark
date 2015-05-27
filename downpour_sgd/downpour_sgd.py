@@ -1,5 +1,4 @@
 import sys
-from pyspark import SparkContext
 from sklearn import linear_model as lm # for gradient descent; adapted from https://gist.github.com/MLnick/4707012
 from sklearn.base import copy
 import random
