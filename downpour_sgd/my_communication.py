@@ -1,6 +1,12 @@
 from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
 import sys
 
+'''
+Data type (i.e. parameters or gradients) is dependent upon port
+45001 : parameters
+45002 : gradients
+'''
+
 
 def send_data(data, loc):
 	# Send data to location provided in loc (IP)
@@ -11,10 +17,17 @@ def send_data(data, loc):
 	my_socket = socket(AF_INET, SOCK_DGRAM)
 	my_socket.bind( (hostname, PORT) )
 
-	print "Test server listening on port {0}\n".format(PORT)
+	#print "Test server listening on port {0}\n".format(PORT)
 	return True # Signifies no error
 
-def receive_data():
+def receive_data(loc):
+	PORT = loc
+	SIZE = 1024
+	hostname = gethostbyname('0.0.0.0')
+
+	my_socket = socket(AF_INET, SOCK_DGRAM)
+	my_socket.bind( (hostname, PORT) )
+
 	data = None
 	while data is not None:
 		# Should probably add a timeout
