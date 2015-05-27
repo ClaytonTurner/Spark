@@ -6,21 +6,17 @@ import random
 from math import sqrt
 import mlp
 import numpy
-from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
+import my_communication as comm
 
 #TODO
 # Add adagrad
 
-accrued_gradients = 0.
-PARAM_IP = "192.168.137.50"
-PARAM_UPDATE_PORT = 45001
-PARAM_READ_PORT = 45002
-SIZE = 1024 # Probably have to increase this or change implementation with adagrad
-hostname = gethostbyname('0.0.0.0')
-my_socket = socket(AF_INET, SOCK_DGRAM)
-my_socket.bind( (hostname, PORT) )
+accrued_gradients = 0. # initialize the same way we reset later
+SERVER_IP = "192.168.137.50"
+PARAM_PORT = 45001
+GRAD_PORT = 45002
 
-def init_parameters(data_len):
+def init_parameters(data_len): # Probably moving to distbelief at some point
 	hidden_layers = [100,100,100]
 	weight_dist = 1./sqrt(data_len)
 	weights = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
@@ -29,19 +25,19 @@ def init_parameters(data_len):
 	return {"hidden_layers":hidden_layers,"weights":weights}
 
 def get_accrued_gradients():
-	global accrued_gradients # Best to be sure of what I'm returning
-	return accrued_gradients
+	data = comm.receive_data(GRAD_PORT)
+	return data
 
 def set_accrued_gradients(grad):
-	global accrued_gradients # Needed to modify accrued_gradients globally
-	accrued_gradients += grad
+	# Modify accrued_gradients will values local to just one replica
+	#TODO
 
 def set_parameters(params):
-	global parameters # Needed to modify parameters globally
-	parameters = params
+	comm.send_data(params,PARAM_PORT)
 
 def getParametersFromParamServer():
-	
+	data = comm.receive_data(PARAM_PORT)
+	return data
 
 def startAsynchronouslyFetchingParameters(parameters):
 	params = getParametersFromParamServer()
@@ -49,10 +45,11 @@ def startAsynchronouslyFetchingParameters(parameters):
 
 def startAsynchronouslyPushingGradients(accrued_gradients):
 	sendGradientsToParamServer(accrued_gradients)
-	accrued_gradients = 0
+	accrued_gradients = 0 # reset accrued_gradients
 
 def sendGradientsToParamsServer(accrued_gradients):
-	set_accrued_gradients(accrued_gradients)
+	#set_accrued_gradients(accrued_gradients)
+	comm.send_data(accrued_gradients,GRAD_PORT)
 
 def getNextMinibatch(data):
 	#TODO
