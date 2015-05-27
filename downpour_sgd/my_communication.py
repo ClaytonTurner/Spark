@@ -11,7 +11,7 @@ def send_data(data, loc):
 	my_socket = socket(AF_INET, SOCK_DGRAM)
 	my_socket.bind( (hostname, PORT) )
 
-	print "Test server listening on port {0}\n".format(PORT)
+	#print "Test server listening on port {0}\n".format(PORT)
 	return True # Signifies no error
 
 def receive_data():
