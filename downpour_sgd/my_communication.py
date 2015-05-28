@@ -8,20 +8,21 @@ Data type (i.e. parameters or gradients) is dependent upon port
 '''
 
 
-def send_data(data, loc):
+def send_data(data, PORT, IP):
 	# Send data to location provided in loc (IP)
-	PORT = loc
 	SIZE = 1024 # May need to alter
 	hostname = gethostbyname('0.0.0.0')
 
 	my_socket = socket(AF_INET, SOCK_DGRAM)
 	my_socket.bind( (hostname, PORT) )
 
+	while True:
+		my_socket.sendto(data,(IP,PORT))
+
 	#print "Test server listening on port {0}\n".format(PORT)
 	return True # Signifies no error
 
-def receive_data(loc):
-	PORT = loc
+def receive_data(PORT):
 	SIZE = 1024
 	hostname = gethostbyname('0.0.0.0')
 
