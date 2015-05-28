@@ -24,7 +24,7 @@ def set_accrued_gradients(grad):
 	#TODO
 
 def set_parameters(params):
-	comm.send_data(params,PARAM_PORT)
+	comm.send_data(params,PARAM_PORT,SERVER_IP)
 
 def getParametersFromParamServer():
 	data = comm.receive_data(PARAM_PORT)
@@ -40,7 +40,7 @@ def startAsynchronouslyPushingGradients(accrued_gradients):
 
 def sendGradientsToParamsServer(accrued_gradients):
 	#set_accrued_gradients(accrued_gradients)
-	comm.send_data(accrued_gradients,GRAD_PORT)
+	comm.send_data(accrued_gradients,GRAD_PORT,SERVER_IP)
 
 def getNextMinibatch(data):
 	#TODO
