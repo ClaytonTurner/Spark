@@ -1,5 +1,8 @@
-from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
-import sys
+#from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
+#import sys
+import asyncore
+import asynchat
+import socket
 
 '''
 Data type (i.e. parameters or gradients) is dependent upon port
@@ -7,7 +10,9 @@ Data type (i.e. parameters or gradients) is dependent upon port
 45002 : gradients
 '''
 
-
+##############
+## Old Code ##
+##############
 def send_data(data, PORT, IP):
 	# Send data to location provided in loc (IP)
 	SIZE = 1024 # May need to alter
@@ -34,3 +39,7 @@ def receive_data(PORT):
 		# Should probably add a timeout
 		(data,addr) = my_socket.recvfrom(SIZE)
 	return data # Signifies no error
+
+if __name__ == '__main__':
+	server = EchoServer('localhost', 8080)
+	asyncore.loop()

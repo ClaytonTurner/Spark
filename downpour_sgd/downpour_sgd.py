@@ -1,9 +1,11 @@
+# sklearn is commented out because we can't install it for some reason on the vms
+
 import sys
-from sklearn import linear_model as lm # for gradient descent; adapted from https://gist.github.com/MLnick/4707012
-from sklearn.base import copy
+#from sklearn import linear_model as lm # for gradient descent; adapted from https://gist.github.com/MLnick/4707012
+#from sklearn.base import copy
 import random
 from math import sqrt
-import mlp
+#import mlp
 import numpy
 import my_communication as comm
 
@@ -22,6 +24,7 @@ def get_accrued_gradients():
 def set_accrued_gradients(grad):
 	# Modify accrued_gradients will values local to just one replica
 	#TODO
+	return None
 
 def set_parameters(params):
 	comm.send_data(params,PARAM_PORT,SERVER_IP)

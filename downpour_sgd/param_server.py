@@ -3,11 +3,23 @@ This file is for the param server which will host gradient descent updates
  to be read by and written to by the distbelief model replicas
 '''
 
-from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
+#from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
+import socket
 import sys
-PORT = 45001
-SIZE = 1024 # May need to alter
+import threading
+import SocketServer
+from time import sleep
+from SimpleXMLRPCServer import SimpleXMLRPCServer
 
+HOST = socket.gethostname()
+PORT = 45001
+SIZE = 4096 # Find out how big our messages will be then fix this
+	    # Or send a size first and handle that then
+	    # TODO
+
+
+
+'''
 hostname = gethostbyname('0.0.0.0')
 
 my_socket = socket(AF_INET, SOCK_DGRAM)
@@ -23,3 +35,16 @@ while True:
 	
 	print data
 sys.exit()
+'''
+
+def test_func(*nums):
+	return sum(nums)
+
+if __name__ == "__main__":
+	# Port 0 means to select an arbitrary unused port
+	#HOST, PORT = "localhost", 0 # defined earlier in file
+	server = SimpleXMLRPCServer(("localhost",8000))
+	print "Listening on port 8000..."
+	server.register_function(test_func,"test function");
+	server.serve_forever()
+
