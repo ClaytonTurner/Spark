@@ -16,11 +16,15 @@ we can do an initial read from all replicas if needbe, but there is no
 '''
 
 def compute_gradient(params,alpha):
-	return None
+	# This function computes the gradient for one sample
+	# i.e. Gradient Descent
+	new_params = list()
+	for hl_weights in params:
+		grad = hl_weights - alpha*()
+		new_params.append(grad)
+	return new_params
 
 if __name__ == "__main__":
-        slices = 10 # Arbitrary - Empirically tune for performance
-
         #data_file = "/data/spark/Spark/iris_labelFirst.data"
 
         step = 0
