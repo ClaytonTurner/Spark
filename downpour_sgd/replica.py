@@ -39,9 +39,7 @@ if __name__ == "__main__":
 		accrued_gradients = compute_gradient(parameters,learning_rate)
                 #parameters -= alpha*gradient #TODO as parameters is currently a dictionary
                 if step%n_push == 0: # Always true in fixed case
-			boolean = proxy.startAsynchronouslyPushingGradients(accrued_gradients)
-			print boolean
-			if boolean is not True:
+			if proxy.startAsynchronouslyPushingGradients(accrued_gradients) is not True:
 				grad_push_errors += 1
                 step += 1
 	print "Gradient Pushing Errors: "+str(grad_push_errors)+"\n"
