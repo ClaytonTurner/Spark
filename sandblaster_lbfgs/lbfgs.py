@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.optimize.optimize import vecnorm
 from scipy.optimize.linesearch import line_search_BFGS as lineSearch
 
 def f(x):   # The rosenbrock function
@@ -7,8 +6,17 @@ def f(x):   # The rosenbrock function
 def fprime(x):
 	return np.array((-2*.5*(1 - x[0]) - 4*x[0]*(x[1] - x[0]**2), 2*(x[1] - x[0]**2)))
 
-def fmin_LBFGS(func, x0, fprime, maxIter=None):
-
+def fmin_LBFGS(func, x0, fprime, maxIter=1000):
+	"""
+	func: callable f(x)
+		Objective function to be minimized.
+	x0: ndarray
+		Initial guess.
+	fprime: callable f'(x)
+		Gradient of f.
+	maxIter: int, optional
+		Maximum number of Iterations to perform
+	"""
 	x0 = np.asarray(x0).flatten()
 	if(x0.ndim == 0):
 		x0.shape = (1,)
@@ -17,30 +25,25 @@ def fmin_LBFGS(func, x0, fprime, maxIter=None):
 	old_fval = f(x0)
 	old_old_fval = None
 	gf_k = fprime(x0)
-	invHessian_B = np.identity(len(x0))
-
-	step_K = 0
-
-	if(maxIter is None):
-		maxIter = 1000
+	invHessian_B = np.identity(x0.size)
 
 	maxHistory = 10
 	history_S = np.empty(shape=(maxHistory,2))
 	history_Y = np.empty(shape=(maxHistory,2))
 	rho = np.empty(maxHistory)
 
-	maxiter = 100
-	norm = np.Inf
-	gtol = 1e-5
-	gnorm = vecnorm(gf_k, ord=norm)
+	step_K = 0
 
-	while (gnorm > gtol) and (step_K < maxiter):
+	gtol = 1e-5
+	gnorm = np.linalg.norm(gf_k, np.inf)
+
+	while (gnorm > gtol) and (step_K < maxIter):
 
 		d_k = computeDirection(maxHistory, step_K, gf_k, invHessian_B, history_S, history_Y, rho)
 
 		#lineSearch
 		alpha_K = getAlphaLineSearch(x_k, d_k, gf_k, old_fval, old_old_fval)
-		x_kp1 = np.add(x_k, alpha_K * d_k)
+		x_kp1 = x_k + alpha_K * d_k
 
 		#define the index to update the arrays S and Y
 		#the history arrays, S and Y, are reused for eficiency
@@ -48,24 +51,24 @@ def fmin_LBFGS(func, x0, fprime, maxIter=None):
 		indexHistory = indexHistory if(indexHistory < (maxHistory - 1)) else 0
 
 		#save new pair
-		new_S = np.subtract(x_kp1, x_k)
-		history_S[indexHistory] = new_S
+		s_k = np.subtract(x_kp1, x_k)
+		history_S[indexHistory] = s_k
 
-		gf_kp1 = fprime(x_kp1) #gradient of f(x_kp1)
-		new_Y = gf_kp1 - gf_k
-		history_Y[indexHistory] = new_Y
+		gf_kp1 = fprime(x_kp1)
+		y_k = gf_kp1 - gf_k
+		history_Y[indexHistory] = y_k
 		gf_k = gf_kp1
 		
-		rho[indexHistory] = 1.0 / (np.dot(new_S, new_Y))
+		rho[indexHistory] = 1.0 / (np.dot(s_k, y_k))
 
 		#updates the inverve Hessian matrix
-		factor = np.dot(new_S, new_Y) / np.dot(new_Y, new_Y)
+		factor = np.dot(s_k, y_k) / np.dot(y_k, y_k)
 		invHessian_B = np.multiply(factor, invHessian_B)
 		
 		old_old_fval = old_fval
 		old_fval = func(x_k)
 		x_k = x_kp1
-		gnorm = vecnorm(gf_k, ord=norm)
+		gnorm = np.linalg.norm(gf_k, np.inf)
 		step_K += 1
 	
 	x_opt = x_k
