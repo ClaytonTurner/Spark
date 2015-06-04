@@ -26,9 +26,14 @@ def compute_gradient(nn):
 	#	a roundabout method of grabbing what we need
 	return nn.weights
 
-def slice_data(data):
+def slice_data(data,shape):
 	# This function assumes np.array as the type for data
-	# This function separates data into X (features) and Y (label) for the NN 
+	# This function separates data into X (features) and Y (label) for the NN
+	print data
+	print data.shape 
+	data = np.reshape(data,shape)
+	print data
+	print data.shape
 	y = data[:,-1]
 	x = data[:,:-1]
 	return x,y
@@ -52,20 +57,22 @@ if __name__ == "__main__":
                 if step%n_fetch == 0: # Always true in fixed case
 			parameters = proxy.startAsynchronouslyFetchingParameters()
 			nn.set_weights(parameters)
-		#data = np.frombuffer(base64.decodestring(proxy.getNextMinibatch())) #.fromstring())
-		data = np.fromstring(proxy.getNextMinibatch())
-		print data
+		data,shape = proxy.getNextMinibatch()
 		if(data == "Done"):
-			break 
-		x,y = slice_data(data)
+			break
+		data = np.frombuffer(base64.decodestring(data)) #.fromstring()
+		x,y = slice_data(data,shape)
 		nn.fit(x,y,learning_rate)
 		accrued_gradients = compute_gradient(nn)
 		if step%n_push == 0: # Always true in fixed case
 			if proxy.startAsynchronouslyPushingGradients(accrued_gradients) is not True:
 				grad_push_errors += 1
                 step += 1
-	print "Gradient Pushing Errors: "+str(grad_push_errors)+"\n"
-	
+	print "Neural Network Replica trained with "+str(grad_push_errors)+" Gradient errors\n"
+	'''
+	At this point, our NN replica is done. We need to make sure all replicas have completed
+	Then we can pull down a final set of weights for a trained model for prediction
+	'''	
 
  ##gradient = sc.parallelize(data, numSlices=slices) \
  ##       .mapPartitions(lambda x: computeGradient(parameters,x) \

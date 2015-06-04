@@ -33,11 +33,13 @@ def getNextMinibatch():
 	minibatch_start = batches_processed*batch_size
 	minibatch_end = minibatch_start+batch_size
 	if(minibatch_end > len(data)):
-		return "Done"
+		return "Done","Done" # Gonna have to change this
 	else:
+		minibatch = data[minibatch_start:(minibatch_start+batch_size),:-1]
+		print minibatch.shape
 		batches_processed += 1 
-		#return base64.b64encode(data[minibatch_start:(minibatch_start+batch_size),:-1].tostring())
-		return np.tostring(data[minibatch_start:(minibatch_start+batch_size),:-1])
+		return base64.b64encode(minibatch.tostring()),minibatch.shape
+		#return base64.b64encode(np.tostring(data[minibatch_start:(minibatch_start+batch_size),:-1]))
 
 def startAsynchronouslyPushingGradients(grad):
 	# Update the gradients on the server
