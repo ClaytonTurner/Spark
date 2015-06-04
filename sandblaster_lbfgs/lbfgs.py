@@ -25,9 +25,9 @@ def fmin_LBFGS(func, x0, fprime, maxIter=None):
 		maxIter = 1000
 
 	maxHistory = 10
-	history_S = np.empty(shape=(0,2))
-	history_Y = np.empty(shape=(0,2))
-	rho = np.array([])
+	history_S = np.empty(shape=(maxHistory,2))
+	history_Y = np.empty(shape=(maxHistory,2))
+	rho = np.empty(maxHistory)
 
 	maxiter = 100
 	norm = np.Inf
@@ -42,27 +42,24 @@ def fmin_LBFGS(func, x0, fprime, maxIter=None):
 		alpha_K = getAlphaLineSearch(x_k, d_k, gf_k, old_fval, old_old_fval)
 		x_kp1 = np.add(x_k, alpha_K * d_k)
 
-
-		#remove old params
-		if(step_K > maxHistory):
-			history_S = np.delete(history_S, 0, 0)
-			history_Y = np.delete(history_Y, 0, 0)
-			rho = np.delete(rho, 0)
+		#define the index to update the arrays S and Y
+		#the history arrays, S and Y, are reused for eficiency
+		indexHistory = step_K % maxHistory
+		indexHistory = indexHistory if(indexHistory < (maxHistory - 1)) else 0
 
 		#save new pair
 		new_S = np.subtract(x_kp1, x_k)
-		history_S = np.append(history_S, [new_S], axis=0)
+		history_S[indexHistory] = new_S
 
 		gf_kp1 = fprime(x_kp1) #gradient of f(x_kp1)
 		new_Y = gf_kp1 - gf_k
-		history_Y = np.append(history_Y, [new_Y], axis=0)
+		history_Y[indexHistory] = new_Y
 		gf_k = gf_kp1
 		
-		new_rho = 1.0 / (np.dot(new_S, new_Y))
-		rho = np.append(rho, new_rho)
+		rho[indexHistory] = 1.0 / (np.dot(new_S, new_Y))
 
 		#updates the inverve Hessian matrix
-		factor = np.dot(history_S[-1], history_Y[-1]) / np.dot(history_Y[-1], history_Y[-1])
+		factor = np.dot(new_S, new_Y) / np.dot(new_Y, new_Y)
 		invHessian_B = np.multiply(factor, invHessian_B)
 		
 		old_old_fval = old_fval
