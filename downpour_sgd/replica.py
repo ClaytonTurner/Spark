@@ -50,8 +50,8 @@ if __name__ == "__main__":
 
 	random.seed(8008) # should allow stabilization across machines
 			  # Removes need for initial weight fetch
-	layers = [100,100,100,2] # layers - 1 = hidden layers, I believe
-	nn = NeuralNetwork(layers,activation='sigmoid')
+	layers = [2,2,1] # layers - 1 = hidden layers, I believe
+	nn = NeuralNetwork(layers)#,activation='sigmoid')
 	grad_push_errors = 0
         while(step < 5):# Going to change up later for minibatch counts
                 if step%n_fetch == 0: # Always true in fixed case
@@ -73,7 +73,10 @@ if __name__ == "__main__":
 	At this point, our NN replica is done. We need to make sure all replicas have completed
 	Then we can pull down a final set of weights for a trained model for prediction
 	'''	
-
+	
+	x = np.array([[0,0],[0,1],[1,0],[1,1]])
+	for e in x:
+		print(e,nn.predict(e))
  ##gradient = sc.parallelize(data, numSlices=slices) \
  ##       .mapPartitions(lambda x: computeGradient(parameters,x) \
  ##       .reduce(lambda x, y: merge(x,y))
