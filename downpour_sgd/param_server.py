@@ -14,7 +14,7 @@ import base64
 HOST = socket.gethostname()
 PORT = 8000
 
-params = list() 
+params = []
 
 '''
 # This shouldn't be needed as we use seeding in replica.py to create our models
@@ -27,7 +27,7 @@ def initialize():
 '''		
 batches_processed = 0
 batch_size = 4
-data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]])
+data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
 def getNextMinibatch():
 	global batches_processed
 	minibatch_start = batches_processed*batch_size
@@ -36,7 +36,6 @@ def getNextMinibatch():
 		return "Done","Done" # Gonna have to change this
 	else:
 		minibatch = data[minibatch_start:(minibatch_start+batch_size),:]
-		print minibatch.shape
 		batches_processed += 1 
 		return base64.b64encode(minibatch.tostring()),minibatch.shape
 		#return base64.b64encode(np.tostring(data[minibatch_start:(minibatch_start+batch_size),:-1]))
@@ -44,14 +43,17 @@ def getNextMinibatch():
 def startAsynchronouslyPushingGradients(grad,shape):
 	# Update the gradients on the server
 	global params
-	#decode_grad = np.frombuffer(base64.decodestring(data))
-	#decode_grad = np.reshape(decode_grade,shape)
-	params = grad
+	decode_grad = np.frombuffer(base64.decodestring(grad),dtype=np.float64)
+	decode_grad = np.reshape(decode_grad,shape)
+	params = [decode_grad]
+	print params
 	return True
 
 def startAsynchronouslyFetchingParameters():
 	global params
-	return params
+	shape = params[0].shape
+	encode_params = base64.b64encode(params[0])
+	return encode_params,shape
 
 if __name__ == "__main__":
 	print "Starting Param Server. Ctrl + C to quit\n"

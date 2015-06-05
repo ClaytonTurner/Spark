@@ -7,7 +7,6 @@ from neural_net import NeuralNetwork
 import numpy as np
 import base64
 
-learning_rate = 0.1 # tune later on
 n_fetch = 1 # fixed in the paper, so let's leave it that way here
 n_push = 1 # same as n_fetch
 
@@ -49,26 +48,33 @@ if __name__ == "__main__":
         
 	proxy = xmlrpclib.ServerProxy("http://"+PARAM_SERVER+":"+str(PORT)+"/",allow_none=True)
 
-	random.seed(8008) # should allow stabilization across machines
+	random.seed(8000) # should allow stabilization across machines
 			  # Removes need for initial weight fetch
 	layers = [2,2,1] # layers - 1 = hidden layers, I believe
 	nn = NeuralNetwork(layers)#,activation='sigmoid')
 	grad_push_errors = 0
         while(step < 5):# Going to change up later for minibatch counts
-                if step%n_fetch == 0: # Always true in fixed case
-			parameters = proxy.startAsynchronouslyFetchingParameters()
-			if step > 0:
-				nn.set_weights(parameters)
+                if step%n_fetch == 0 and step > 0: # Always true in fixed case | step > 0 since init happens with the first nn.fit
+			parameters,param_shape = proxy.startAsynchronouslyFetchingParameters()
+			parameters = np.reshape(np.frombuffer(base64.decodestring(parameters),dtype=np.float64),param_shape)
+			nn.set_weights(parameters)
 		data,shape = proxy.getNextMinibatch()
 		if(data == "Done"):
+			if step == 0:
+				print "No data provided to replica. Exiting..."
+				import sys
+				sys.exit()
 			break
-		data = np.frombuffer(base64.decodestring(data)) #.fromstring()
+		data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()
 		x,y = slice_data(data,shape)
-		nn.fit(x,y,learning_rate)
+		nn.fit(x,y)
+		print "x:",x
+		print "y:",y
 		accrued_gradients = compute_gradient(nn)
 		if step%n_push == 0: # Always true in fixed case
-			#accrued_gradients = base64.b64encode(accrued_gradients.tostring())
-			if proxy.startAsynchronouslyPushingGradients(accrued_gradients) is not True:
+			ag_shape = accrued_gradients[0].shape
+			accrued_gradients = base64.b64encode(accrued_gradients[0].tostring())
+			if proxy.startAsynchronouslyPushingGradients(accrued_gradients,ag_shape) is not True:
 				grad_push_errors += 1
                 step += 1
 	print "Neural Network Replica trained with "+str(grad_push_errors)+" Gradient errors\n"

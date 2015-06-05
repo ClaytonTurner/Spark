@@ -45,7 +45,7 @@ class NeuralNetwork:
         X = np.concatenate((ones.T, X), axis=1)
         for k in range(epochs):
             if k % 10000 == 0: print 'epochs:', k
-            
+            if k % 10000 == 0: print 'weights:',self.weights 
             i = np.random.randint(X.shape[0])
             a = [X[i]]
 
