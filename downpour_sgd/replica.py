@@ -29,11 +29,12 @@ def compute_gradient(nn):
 def slice_data(data,shape):
 	# This function assumes np.array as the type for data
 	# This function separates data into X (features) and Y (label) for the NN
-	print data
-	print data.shape 
+	# Check if c orientation is fine, if not switch to fortran (check numpy docs)
+	#print data
+	#print data.shape 
 	data = np.reshape(data,shape)
-	print data
-	print data.shape
+	#print data
+	#print data.shape
 	y = data[:,-1]
 	x = data[:,:-1]
 	return x,y
@@ -56,7 +57,8 @@ if __name__ == "__main__":
         while(step < 5):# Going to change up later for minibatch counts
                 if step%n_fetch == 0: # Always true in fixed case
 			parameters = proxy.startAsynchronouslyFetchingParameters()
-			nn.set_weights(parameters)
+			if step > 0:
+				nn.set_weights(parameters)
 		data,shape = proxy.getNextMinibatch()
 		if(data == "Done"):
 			break
@@ -65,6 +67,7 @@ if __name__ == "__main__":
 		nn.fit(x,y,learning_rate)
 		accrued_gradients = compute_gradient(nn)
 		if step%n_push == 0: # Always true in fixed case
+			#accrued_gradients = base64.b64encode(accrued_gradients.tostring())
 			if proxy.startAsynchronouslyPushingGradients(accrued_gradients) is not True:
 				grad_push_errors += 1
                 step += 1

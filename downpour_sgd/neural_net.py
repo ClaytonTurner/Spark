@@ -43,7 +43,6 @@ class NeuralNetwork:
         # This is to add the bias unit to the input layer
         ones = np.atleast_2d(np.ones(X.shape[0]))
         X = np.concatenate((ones.T, X), axis=1)
-         
         for k in range(epochs):
             if k % 10000 == 0: print 'epochs:', k
             
@@ -79,7 +78,6 @@ class NeuralNetwork:
     def predict(self, x): 
         a = np.concatenate((np.ones(1).T, np.array(x)), axis=1)     
         for l in range(0, len(self.weights)):
-	    print self.weights[l]
             a = self.activation(np.dot(a, self.weights[l]))
         return a
 
