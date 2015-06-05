@@ -1,18 +1,13 @@
 import numpy as np
-from scipy.optimize.linesearch import line_search_BFGS as lineSearch
+from scipy.optimize.linesearch import line_search_wolfe1
 
-def f(x):   # The rosenbrock function
-	return .5*(1 - x[0])**2 + (x[1] - x[0]**2)**2
-def fprime(x):
-	return np.array((-2*.5*(1 - x[0]) - 4*x[0]*(x[1] - x[0]**2), 2*(x[1] - x[0]**2)))
-
-def fmin_LBFGS(func, x0, fprime, maxIter=1000):
+def fmin_LBFGS(func, x0, funcprime, maxIter=1000):
 	"""
 	func: callable f(x)
 		Objective function to be minimized.
 	x0: ndarray
 		Initial guess.
-	fprime: callable f'(x)
+	funcprime: callable f'(x)
 		Gradient of f.
 	maxIter: int, optional
 		Maximum number of Iterations to perform
@@ -21,17 +16,18 @@ def fmin_LBFGS(func, x0, fprime, maxIter=1000):
 	if(x0.ndim == 0):
 		x0.shape = (1,)
 
+	len_x = x0.size
 	x_k = x0
-	old_fval = f(x0)
+	old_fval = func(x0)
 	old_old_fval = None
-	gf_k = fprime(x0)
-	invHessian_B = np.identity(x0.size)
+	gf_k = funcprime(x0)
+	invHessian_B = np.identity(len_x)
 
 	maxHistory = 10
-	history_S = np.empty(shape=(maxHistory,2))
-	history_Y = np.empty(shape=(maxHistory,2))
+	history_S = np.empty(shape=(maxHistory, len_x))
+	history_Y = np.empty(shape=(maxHistory, len_x))
 	rho = np.empty(maxHistory)
-
+	warnFlag = 0
 	step_K = 0
 
 	gtol = 1e-5
@@ -39,10 +35,17 @@ def fmin_LBFGS(func, x0, fprime, maxIter=1000):
 
 	while (gnorm > gtol) and (step_K < maxIter):
 
+		#direction d_k = - B_k * g_k
 		d_k = computeDirection(maxHistory, step_K, gf_k, invHessian_B, history_S, history_Y, rho)
 
-		#lineSearch
-		alpha_K = getAlphaLineSearch(x_k, d_k, gf_k, old_fval, old_old_fval)
+		#lineSearch 
+		alpha_K, fc, gc, old_fval, old_old_fval, gf_kp1 = \
+							line_search_wolfe1(func, funcprime, x_k, d_k, gf_k, old_fval, old_old_fval)
+		if(alpha_K is None):
+			# Line search failed to find a better solution.
+			warnFlag = 1
+			break
+
 		x_kp1 = x_k + alpha_K * d_k
 
 		#define the index to update the arrays S and Y
@@ -51,26 +54,28 @@ def fmin_LBFGS(func, x0, fprime, maxIter=1000):
 		indexHistory = indexHistory if(indexHistory < (maxHistory - 1)) else 0
 
 		#save new pair
-		s_k = np.subtract(x_kp1, x_k)
-		history_S[indexHistory] = s_k
-
-		gf_kp1 = fprime(x_kp1)
-		y_k = gf_kp1 - gf_k
-		history_Y[indexHistory] = y_k
-		gf_k = gf_kp1
-		
+		history_S[indexHistory] = s_k = np.subtract(x_kp1, x_k)
+		history_Y[indexHistory] = y_k = gf_kp1 - gf_k
 		rho[indexHistory] = 1.0 / (np.dot(s_k, y_k))
-
+		
 		#updates the inverve Hessian matrix
 		factor = np.dot(s_k, y_k) / np.dot(y_k, y_k)
 		invHessian_B = np.multiply(factor, invHessian_B)
-		
-		old_old_fval = old_fval
-		old_fval = func(x_k)
+
+		gnorm = np.linalg.norm(gf_kp1, np.inf)
 		x_k = x_kp1
-		gnorm = np.linalg.norm(gf_k, np.inf)
+		gf_k = gf_kp1
+
+		if(not np.isfinite(old_fval)):
+			#optimal value is +-Inf
+			warnFlag = 1
+			break
+
 		step_K += 1
 	
+	if(warnFlag == 1):
+		print "Stopped due to precission loss"
+
 	x_opt = x_k
 	fval = old_fval
 	print("***Current function value: %f" % fval)
@@ -95,11 +100,22 @@ def computeDirection(maxHistory, step_K, gf_k, B_k, history_S, history_Y, rho):
 
 	return -r
 
-def getAlphaLineSearch(xK, direction_k, gf_k, old_fval, old_old_fval):
-	""" returns alpha that satisfies x_new = x0 + alpha * pk"""
-	res = lineSearch(f, xK, direction_k, gf_k, old_fval)
-	(alpha_K), others = res[0], res[1:]
-	return alpha_K
 
+def f(x):   # The rosenbrock function
+	return .5*(1 - x[0])**2 + (x[1] - x[0]**2)**2
+def fprime(x):
+	return np.array((-2*.5*(1 - x[0]) - 4*x[0]*(x[1] - x[0]**2), 2*(x[1] - x[0]**2)))
+
+def BoothFunc(x):
+	return (x[0] + 2*x[1] - 7)**2 + (2*x[0] + x[1] - 5)**2
+
+def BoothFprime(x):
+	return np.array((10*x[0] + 8*x[1] - 34, 10*x[1] + 8*x[0] - 38))
+
+def MatyasFunc(x):
+	return 0.26*(x[0]**2 + x[1]**2) - 0.48*x[0]*x[1]
+
+def MatyasFprime(x):
+	return np.array((0.52*x[0] - 0.48*x[1], 0.52*x[1] + 0.48*x[0]))
 
 print fmin_LBFGS(f, [2.,2.], fprime)
