@@ -1,3 +1,8 @@
+'''
+This file is no longer used, but could function as a reference
+'''
+
+
 #from socket import socket, gethostbyname, AF_INET, SOCK_DGRAM
 #import sys
 import asyncore
