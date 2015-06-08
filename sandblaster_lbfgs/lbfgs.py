@@ -118,4 +118,5 @@ def MatyasFunc(x):
 def MatyasFprime(x):
 	return np.array((0.52*x[0] - 0.48*x[1], 0.52*x[1] + 0.48*x[0]))
 
-print fmin_LBFGS(f, [2.,2.], fprime)
+if __name__ == '__main__':
+	print fmin_LBFGS(f, [2.,2.], fprime)
