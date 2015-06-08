@@ -38,22 +38,24 @@ def getNextMinibatch():
 		minibatch = data[minibatch_start:(minibatch_start+batch_size),:]
 		batches_processed += 1 
 		return base64.b64encode(minibatch.tostring()),minibatch.shape
-		#return base64.b64encode(np.tostring(data[minibatch_start:(minibatch_start+batch_size),:-1]))
 
-def startAsynchronouslyPushingGradients(grad,shape):
+def startAsynchronouslyPushingGradients(grad,shape,out_nodes,out_shape):
 	# Update the gradients on the server
 	global params
 	decode_grad = np.frombuffer(base64.decodestring(grad),dtype=np.float64)
 	decode_grad = np.reshape(decode_grad,shape)
-	params = [decode_grad]
-	print params
+	out_grad = np.frombuffer(base64.decodestring(out_nodes),dtype=np.float64)
+	out_grad = np.reshape(out_grad,out_shape)
+	params = [decode_grad,out_grad]
 	return True
 
 def startAsynchronouslyFetchingParameters():
 	global params
 	shape = params[0].shape
 	encode_params = base64.b64encode(params[0])
-	return encode_params,shape
+	out_shape = params[1].shape
+	encode_out = base64.b64encode(params[1])
+	return encode_params,shape,encode_out,out_shape
 
 if __name__ == "__main__":
 	print "Starting Param Server. Ctrl + C to quit\n"

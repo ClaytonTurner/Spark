@@ -55,9 +55,12 @@ if __name__ == "__main__":
 	grad_push_errors = 0
         while(step < 5):# Going to change up later for minibatch counts
                 if step%n_fetch == 0 and step > 0: # Always true in fixed case | step > 0 since init happens with the first nn.fit
-			parameters,param_shape = proxy.startAsynchronouslyFetchingParameters()
+			parameters,param_shape,out,out_shape = proxy.startAsynchronouslyFetchingParameters()
 			parameters = np.reshape(np.frombuffer(base64.decodestring(parameters),dtype=np.float64),param_shape)
-			nn.set_weights(parameters)
+			out = np.reshape(np.frombuffer(base64.decodestring(out),dtype=np.float64),out_shape)
+			print nn.weights
+			nn.set_weights([parameters,out])
+			print nn.weights
 		data,shape = proxy.getNextMinibatch()
 		if(data == "Done"):
 			if step == 0:
@@ -68,13 +71,13 @@ if __name__ == "__main__":
 		data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()
 		x,y = slice_data(data,shape)
 		nn.fit(x,y)
-		print "x:",x
-		print "y:",y
 		accrued_gradients = compute_gradient(nn)
 		if step%n_push == 0: # Always true in fixed case
 			ag_shape = accrued_gradients[0].shape
-			accrued_gradients = base64.b64encode(accrued_gradients[0].tostring())
-			if proxy.startAsynchronouslyPushingGradients(accrued_gradients,ag_shape) is not True:
+			accrued_nodes = base64.b64encode(accrued_gradients[0].tostring())
+			output_shape = accrued_gradients[1].shape
+			output_nodes = base64.b64encode(accrued_gradients[1].tostring())# I THINK these are the output nodes
+			if proxy.startAsynchronouslyPushingGradients(accrued_nodes,ag_shape,output_nodes,output_shape) is not True:
 				grad_push_errors += 1
                 step += 1
 	print "Neural Network Replica trained with "+str(grad_push_errors)+" Gradient errors\n"
