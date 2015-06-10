@@ -25,17 +25,27 @@ def compute_gradient(nn):
 	#	a roundabout method of grabbing what we need
 	return nn.weights
 
-def slice_data(data,shape):
+def slice_data(data,shape,lbl_cnt):
 	# This function assumes np.array as the type for data
 	# This function separates data into X (features) and Y (label) for the NN
 	# Check if c orientation is fine, if not switch to fortran (check numpy docs)
-	#print data
-	#print data.shape 
 	data = np.reshape(data,shape)
-	#print data
-	#print data.shape
-	y = data[:,-1]
+	
+	labels = data[:,-1] # We don't know how many we have due to minibatch size 
+	ys = []
+	for l in labels:
+		temp_y = [0 for x in range(lbl_cnt)]#np.zeros(lbl_cnt)
+		temp_y[int(l)] = 1 # we can cast this because we know labels are ints and not a weird float
+		ys.append(temp_y)#[0])
+	#y = np.zeros(lbl_cnt)
+	#y = np.matrix(ys)
+	y = ys
+	print len(y)
+	print y[0]
+	#y[label] = 1
+	
 	x = data[:,:-1]
+	#y = data[:,-1]
 	return x,y
 
 if __name__ == "__main__":
@@ -47,21 +57,22 @@ if __name__ == "__main__":
 	PARAM_SERVER,PORT = "192.168.137.50",8000
         
 	proxy = xmlrpclib.ServerProxy("http://"+PARAM_SERVER+":"+str(PORT)+"/",allow_none=True)
+	feature_count = proxy.get_feature_count()
+	label_count = proxy.get_label_count()
 
 	random.seed(8000) # should allow stabilization across machines
 			  # Removes need for initial weight fetch
-	layers = [4,2,1]#3] # layers - first is input layer. last is output layer. rest is hidden.
-			 # Change from hard-coding to reading from the length of a record whenever possible
+	layers = [feature_count,2,label_count] # layers - first is input layer. last is output layer. rest is hidden.
 	nn = NeuralNetwork(layers)#,activation='sigmoid')
 	grad_push_errors = 0
-        while(step < 5):# Going to change up later for minibatch counts
+        while(True):# Going to change up later for minibatch counts
                 if step%n_fetch == 0 and step > 0: # Always true in fixed case | step > 0 since init happens with the first nn.fit
 			parameters,param_shape,out,out_shape = proxy.startAsynchronouslyFetchingParameters()
 			parameters = np.reshape(np.frombuffer(base64.decodestring(parameters),dtype=np.float64),param_shape)
 			out = np.reshape(np.frombuffer(base64.decodestring(out),dtype=np.float64),out_shape)
-			print nn.weights
+			#print nn.weights
 			nn.set_weights([parameters,out])
-			print nn.weights
+			#print nn.weights
 		data,shape = proxy.getNextMinibatch()
 		if(data == "Done"):
 			if step == 0:
@@ -70,8 +81,8 @@ if __name__ == "__main__":
 				sys.exit()
 			break
 		data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()
-		x,y = slice_data(data,shape)
-		nn.fit(x,y)
+		x,y = slice_data(data,shape,label_count)#,label_count)
+		nn.fit(x,y,epochs=1000)
 		accrued_gradients = compute_gradient(nn)
 		if step%n_push == 0: # Always true in fixed case
 			ag_shape = accrued_gradients[0].shape

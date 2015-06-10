@@ -45,7 +45,7 @@ class NeuralNetwork:
         X = np.concatenate((ones.T, X), axis=1)
         for k in range(epochs):
             if k % 10000 == 0: print 'epochs:', k
-            if k % 10000 == 0: print 'weights:',self.weights 
+            #if k % 10000 == 0: print 'weights:',self.weights 
             i = np.random.randint(X.shape[0])
             a = [X[i]]
 
@@ -89,14 +89,15 @@ if __name__ == '__main__':
 
     print "This is a test of the neural net function - only an example\n"
 
-    nn = NeuralNetwork([2,2,1])
-
+    #nn = NeuralNetwork([2,2,1])
+    nn = NeuralNetwork([2,2,2])
     X = np.array([[0, 0],
                   [0, 1],
                   [1, 0],
                   [1, 1]])
 
-    y = np.array([0, 1, 1, 0])
+    #y = np.array([0, 1, 1, 0])
+    y = np.array([[1,0],[0,1],[0,1],[1,0]])
 
     nn.fit(X, y)
 
