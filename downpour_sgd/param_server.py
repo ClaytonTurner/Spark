@@ -26,12 +26,16 @@ def initialize():
         params = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
 '''		
 batches_processed = 0
-batch_size = 2 
-data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
+batch_size = 150 
+#data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
+data = np.loadtxt("iris.data",delimiter=",") # Labels must be floats
+
 def getNextMinibatch():
 	global batches_processed
 	minibatch_start = batches_processed*batch_size
 	minibatch_end = minibatch_start+batch_size
+	print minibatch_end
+	print len(data)
 	if(minibatch_end > len(data)):
 		return "Done","Done" # Gonna have to change this
 	else:

@@ -50,6 +50,8 @@ class NeuralNetwork:
             a = [X[i]]
 
             for l in range(len(self.weights)):
+		    #print "a[l]:",a[l]
+		    #print "self.weights[l]:",self.weights[l]
                     dot_value = np.dot(a[l], self.weights[l])
                     activation = self.activation(dot_value)
                     a.append(activation)
@@ -73,8 +75,8 @@ class NeuralNetwork:
             for i in range(len(self.weights)):
                 layer = np.atleast_2d(a[i])
                 delta = np.atleast_2d(deltas[i])
+		self.weights[i] = np.array(self.weights[i]).copy()
                	self.weights[i] += learning_rate * layer.T.dot(delta)
-		print "self.weights[i]\n",self.weights[i]
 
 
     def predict(self, x): 

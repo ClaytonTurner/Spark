@@ -50,7 +50,8 @@ if __name__ == "__main__":
 
 	random.seed(8000) # should allow stabilization across machines
 			  # Removes need for initial weight fetch
-	layers = [2,2,1] # layers - 1 = hidden layers, I believe
+	layers = [4,2,1]#3] # layers - first is input layer. last is output layer. rest is hidden.
+			 # Change from hard-coding to reading from the length of a record whenever possible
 	nn = NeuralNetwork(layers)#,activation='sigmoid')
 	grad_push_errors = 0
         while(step < 5):# Going to change up later for minibatch counts
@@ -86,7 +87,8 @@ if __name__ == "__main__":
 	Then we can pull down a final set of weights for a trained model for prediction
 	'''	
 	
-	x = np.array([[0,0],[0,1],[1,0],[1,1]])
+	#x = np.array([[0,0],[0,1],[1,0],[1,1]])
+	x = np.loadtxt("iris.data",delimiter=",")[:,:-1]
 	for e in x:
 		print(e,nn.predict(e))
  ##gradient = sc.parallelize(data, numSlices=slices) \
