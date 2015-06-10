@@ -26,7 +26,7 @@ def initialize():
         params = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
 '''		
 batches_processed = 0
-batch_size = 4
+batch_size = 2 
 data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
 def getNextMinibatch():
 	global batches_processed

@@ -73,7 +73,9 @@ class NeuralNetwork:
             for i in range(len(self.weights)):
                 layer = np.atleast_2d(a[i])
                 delta = np.atleast_2d(deltas[i])
-                self.weights[i] += learning_rate * layer.T.dot(delta)
+               	self.weights[i] += learning_rate * layer.T.dot(delta)
+		print "self.weights[i]\n",self.weights[i]
+
 
     def predict(self, x): 
         a = np.concatenate((np.ones(1).T, np.array(x)), axis=1)     
