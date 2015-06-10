@@ -33,16 +33,11 @@ def slice_data(data,shape,lbl_cnt):
 	
 	labels = data[:,-1] # We don't know how many we have due to minibatch size 
 	ys = []
-	for l in labels:
-		temp_y = [0 for x in range(lbl_cnt)]#np.zeros(lbl_cnt)
+	for l in labels: # This sets up probabilities as outputs | 1 per output class
+		temp_y = [0 for x in range(lbl_cnt)]
 		temp_y[int(l)] = 1 # we can cast this because we know labels are ints and not a weird float
 		ys.append(temp_y)#[0])
-	#y = np.zeros(lbl_cnt)
-	#y = np.matrix(ys)
 	y = ys
-	print len(y)
-	print y[0]
-	#y[label] = 1
 	
 	x = data[:,:-1]
 	#y = data[:,-1]
@@ -62,7 +57,7 @@ if __name__ == "__main__":
 
 	random.seed(8000) # should allow stabilization across machines
 			  # Removes need for initial weight fetch
-	layers = [feature_count,2,label_count] # layers - first is input layer. last is output layer. rest is hidden.
+	layers = [feature_count,10,label_count] # layers - first is input layer. last is output layer. rest is hidden.
 	nn = NeuralNetwork(layers)#,activation='sigmoid')
 	grad_push_errors = 0
         while(True):# Going to change up later for minibatch counts
@@ -100,6 +95,7 @@ if __name__ == "__main__":
 	
 	#x = np.array([[0,0],[0,1],[1,0],[1,1]])
 	x = np.loadtxt("iris.data",delimiter=",")[:,:-1]
+
 	for e in x:
 		print(e,nn.predict(e))
  ##gradient = sc.parallelize(data, numSlices=slices) \
