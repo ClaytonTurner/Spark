@@ -26,7 +26,7 @@ def initialize():
         params = [[random.uniform(-weight_dist,weight_dist) for y in hidden_layers] for x in range(len(hidden_layers)+1)]
 '''		
 batches_processed = 0
-batch_size = 30 # 150 for iris dataset full batch 
+batch_size = 2 # 150 for iris dataset full batch 
 #data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
 data = np.loadtxt("iris.data",delimiter=",") # Labels must be floats
 #def normalize(m):

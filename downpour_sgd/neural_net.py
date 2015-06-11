@@ -75,7 +75,7 @@ class NeuralNetwork:
             for i in range(len(self.weights)):
                 layer = np.atleast_2d(a[i])
                 delta = np.atleast_2d(deltas[i])
-		self.weights[i] = np.array(self.weights[i]).copy()
+		self.weights[i] = np.array(self.weights[i]).copy() # This prevents discontiguous memory errors
                	self.weights[i] += learning_rate * layer.T.dot(delta)
 
 
@@ -87,7 +87,7 @@ class NeuralNetwork:
 
 if __name__ == '__main__':
 
-    print "This is a test of the neural net function - only an example\n"
+    print "This is a test of the neural net on the XOR problem\n"
 
     #nn = NeuralNetwork([2,2,1])
     nn = NeuralNetwork([2,2,2])

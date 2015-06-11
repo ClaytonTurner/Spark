@@ -43,6 +43,13 @@ def slice_data(data,shape,lbl_cnt):
 	#y = data[:,-1]
 	return x,y
 
+def fetch_and_set_weights(proxy,nn):
+	parameters,param_shape,out,out_shape = proxy.startAsynchronouslyFetchingParameters()
+        parameters = np.reshape(np.frombuffer(base64.decodestring(parameters),dtype=np.float64),param_shape)
+        out = np.reshape(np.frombuffer(base64.decodestring(out),dtype=np.float64),out_shape)
+        nn.set_weights([parameters,out])
+
+
 if __name__ == "__main__":
         #data_file = "/data/spark/Spark/iris_labelFirst.data"
 
@@ -62,18 +69,22 @@ if __name__ == "__main__":
 	grad_push_errors = 0
         while(True):# Going to change up later for minibatch counts
                 if step%n_fetch == 0 and step > 0: # Always true in fixed case | step > 0 since init happens with the first nn.fit
-			parameters,param_shape,out,out_shape = proxy.startAsynchronouslyFetchingParameters()
+			'''parameters,param_shape,out,out_shape = proxy.startAsynchronouslyFetchingParameters()
 			parameters = np.reshape(np.frombuffer(base64.decodestring(parameters),dtype=np.float64),param_shape)
 			out = np.reshape(np.frombuffer(base64.decodestring(out),dtype=np.float64),out_shape)
 			#print nn.weights
 			nn.set_weights([parameters,out])
-			#print nn.weights
+			#print nn.weights'''
+			fetch_and_set_weights(proxy,nn)
 		data,shape = proxy.getNextMinibatch()
 		if(data == "Done"):
 			if step == 0:
 				print "No data provided to replica. Exiting..."
 				import sys
 				sys.exit()
+			from time import sleep
+			sleep(5) # When deployed, replace this with a wait from the param server
+			fetch_and_set_weights(proxy,nn) # Final weight fetch for each model
 			break
 		data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()
 		x,y = slice_data(data,shape,label_count)#,label_count)
@@ -102,7 +113,7 @@ if __name__ == "__main__":
 	for e in x:
 		#print(e,nn.predict(e))
 		prediction = list(nn.predict(e))
-		print "Label: ",y[i]," | Predictions: ",prediction
+		#print "Label: ",y[i]," | Predictions: ",prediction
 		if prediction.index(max(prediction)) == y[i]:
 			correct += 1
 		i += 1
