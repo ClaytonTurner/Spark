@@ -77,7 +77,7 @@ if __name__ == "__main__":
 			break
 		data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()
 		x,y = slice_data(data,shape,label_count)#,label_count)
-		nn.fit(x,y,epochs=1000)
+		nn.fit(x,y,learning_rate=0.1,epochs=1000)
 		accrued_gradients = compute_gradient(nn)
 		if step%n_push == 0: # Always true in fixed case
 			ag_shape = accrued_gradients[0].shape
@@ -94,10 +94,19 @@ if __name__ == "__main__":
 	'''	
 	
 	#x = np.array([[0,0],[0,1],[1,0],[1,1]])
-	x = np.loadtxt("iris.data",delimiter=",")[:,:-1]
-
+	f = np.loadtxt("iris.data",delimiter=",")
+	x = f[:,:-1]
+	y = f[:,-1]
+	correct = 0
+	i = 0
 	for e in x:
-		print(e,nn.predict(e))
+		#print(e,nn.predict(e))
+		prediction = list(nn.predict(e))
+		print "Label: ",y[i]," | Predictions: ",prediction
+		if prediction.index(max(prediction)) == y[i]:
+			correct += 1
+		i += 1
+	print "Correct: ",correct,"/",i,"(",float(correct)/float(i),"%)"
  ##gradient = sc.parallelize(data, numSlices=slices) \
  ##       .mapPartitions(lambda x: computeGradient(parameters,x) \
  ##       .reduce(lambda x, y: merge(x,y))
