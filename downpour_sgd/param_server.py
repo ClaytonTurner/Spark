@@ -11,8 +11,9 @@ import socket
 import numpy as np
 import base64
 
-HOST = socket.gethostname()
-PORT = 8000
+HOST = "192.168.137.56" # Host by name switched to contents of /etc/hosts instead of IP. Hardcode is fine
+#HOST = socket.gethostbyname(socket.getfqdn())
+PORT = 49150
 
 params = []
 
@@ -29,18 +30,9 @@ batches_processed = 0
 batch_size = 2 # 150 for iris dataset full batch 
 #data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
 data = np.loadtxt("iris.data",delimiter=",") # Labels must be floats
-#def normalize(m):
-#        m = m.T
-#        m = (m - m.min())/np.ptp(m)
-#        return m.T
-#data = normalize(data)
 np.random.shuffle(data)
 label_count = len(set(data[:,-1]))
 feature_count = len(data[0])-1
-#for i in range(len(data)): # For each record...
-#	label = data[i,-1]
-#	data[i,-1] = np.zeros(label_count)
-#	data[i,-1][label] = 1
 
 def get_label_count(): # This is for setting up multiple labels for the replicas
 	global label_count

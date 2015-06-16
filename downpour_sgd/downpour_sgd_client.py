@@ -56,7 +56,7 @@ if __name__ == "__main__":
 	step = 0
 	
 	HOST = socket.gethostname()
-	PARAM_SERVER,PORT = "192.168.137.50",8000
+	PARAM_SERVER,PORT = "192.168.137.56",49150
         
 	proxy = xmlrpclib.ServerProxy("http://"+PARAM_SERVER+":"+str(PORT)+"/",allow_none=True)
 	feature_count = proxy.get_feature_count()
