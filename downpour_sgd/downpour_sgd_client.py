@@ -9,6 +9,7 @@ import base64
 
 n_fetch = 1 # fixed in the paper, so let's leave it that way here
 n_push = 1 # same as n_fetch
+batches_processed = 0 # just for this replica
 
 '''
 Parameter and Gradient initialization will now happen on the param server
@@ -49,6 +50,18 @@ def fetch_and_set_weights(proxy,nn):
         out = np.reshape(np.frombuffer(base64.decodestring(out),dtype=np.float64),out_shape)
         nn.set_weights([parameters,out])
 
+def getNextMinibatch(data_shard):
+        global batches_processed
+        minibatch_start = batches_processed*batch_size
+        minibatch_end = minibatch_start+batch_size
+        if(minibatch_end > len(data_shard)):
+                return "Done","Done"
+        else:
+                minibatch = data_shard[minibatch_start:(minibatch_start+batch_size),:]
+                batches_processed += 1
+                return minibatch,minibatch.shape
+
+
 
 if __name__ == "__main__":
         #data_file = "/data/spark/Spark/iris_labelFirst.data"
@@ -56,48 +69,56 @@ if __name__ == "__main__":
 	step = 0
 	
 	HOST = socket.gethostname()
-	PARAM_SERVER,PORT = "192.168.137.56",49150
-        
+	PARAM_SERVER,PORT = "192.168.137.62",49151
+       
 	proxy = xmlrpclib.ServerProxy("http://"+PARAM_SERVER+":"+str(PORT)+"/",allow_none=True)
-	feature_count = proxy.get_feature_count()
-	label_count = proxy.get_label_count()
+        feature_count = proxy.get_feature_count()
+        label_count = proxy.get_label_count()
+        batch_size = proxy.get_minibatch_size()
 
-	random.seed(8000) # should allow stabilization across machines
-			  # Removes need for initial weight fetch
-	layers = [feature_count,10,label_count] # layers - first is input layer. last is output layer. rest is hidden.
-	nn = NeuralNetwork(layers)#,activation='sigmoid')
-	grad_push_errors = 0
+        random.seed(8000) # should allow stabilization across machines
+                          # Removes need for initial weight fetch
+        layers = [feature_count,10,label_count] # layers - first is input layer. last is output layer. rest is hidden.
+        nn = NeuralNetwork(layers)#,activation='sigmoid')
+        data_shard,shard_shape = proxy.get_data_shard()
+        data_shard = np.frombuffer(base64.decodestring(data_shard),dtype=np.float64)
+        data_shard = np.reshape(data_shard,shard_shape)
+
+        grad_push_errors = 0
         while(True):# Going to change up later for minibatch counts
                 if step%n_fetch == 0 and step > 0: # Always true in fixed case | step > 0 since init happens with the first nn.fit
-			'''parameters,param_shape,out,out_shape = proxy.startAsynchronouslyFetchingParameters()
-			parameters = np.reshape(np.frombuffer(base64.decodestring(parameters),dtype=np.float64),param_shape)
-			out = np.reshape(np.frombuffer(base64.decodestring(out),dtype=np.float64),out_shape)
-			#print nn.weights
-			nn.set_weights([parameters,out])
-			#print nn.weights'''
-			fetch_and_set_weights(proxy,nn)
-		data,shape = proxy.getNextMinibatch()
-		if(data == "Done"):
-			if step == 0:
-				print "No data provided to replica. Exiting..."
-				import sys
-				sys.exit()
-			from time import sleep
-			sleep(5) # When deployed, replace this with a wait from the param server
-			fetch_and_set_weights(proxy,nn) # Final weight fetch for each model
-			break
-		data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()
-		x,y = slice_data(data,shape,label_count)#,label_count)
-		nn.fit(x,y,learning_rate=0.1,epochs=1000)
-		accrued_gradients = compute_gradient(nn)
-		if step%n_push == 0: # Always true in fixed case
-			ag_shape = accrued_gradients[0].shape
-			accrued_nodes = base64.b64encode(accrued_gradients[0].tostring())
-			output_shape = accrued_gradients[1].shape
-			output_nodes = base64.b64encode(accrued_gradients[1].tostring())# I THINK these are the output nodes
-			if proxy.startAsynchronouslyPushingGradients(accrued_nodes,ag_shape,output_nodes,output_shape) is not True:
-				grad_push_errors += 1
+                        '''parameters,param_shape,out,out_shape = proxy.startAsynchronouslyFetchingParameters()
+                        parameters = np.reshape(np.frombuffer(base64.decodestring(parameters),dtype=np.float64),param_shape)
+                        out = np.reshape(np.frombuffer(base64.decodestring(out),dtype=np.float64),out_shape)
+                        #print nn.weights
+                        nn.set_weights([parameters,out])
+                        #print nn.weights'''
+                        fetch_and_set_weights(proxy,nn)
+                data,shape = getNextMinibatch(data_shard)
+                if(data == "Done"):
+                        if step == 0:
+                                print "No data provided to replica. Exiting..."
+                                import sys
+                                sys.exit()
+                        else:
+                                print "Replica finished processing data shard minibatches. Waiting for testing."
+                        from time import sleep
+                        sleep(5) # When deployed, replace this with a wait from the param server
+                        fetch_and_set_weights(proxy,nn) # Final weight fetch for each model
+                        break
+                #data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()
+                x,y = slice_data(data,shape,label_count)#,label_count)
+                nn.fit(x,y,learning_rate=0.1,epochs=1000)
+                accrued_gradients = compute_gradient(nn)
+                if step%n_push == 0: # Always true in fixed case
+                        ag_shape = accrued_gradients[0].shape
+                        accrued_nodes = base64.b64encode(accrued_gradients[0].tostring())
+                        output_shape = accrued_gradients[1].shape
+                        output_nodes = base64.b64encode(accrued_gradients[1].tostring())# I THINK these are the output nodes
+                        if proxy.startAsynchronouslyPushingGradients(accrued_nodes,ag_shape,output_nodes,output_shape) is not True:
+                                grad_push_errors += 1
                 step += 1
+ 
 	print "Neural Network Replica trained with "+str(grad_push_errors)+" Gradient errors\n"
 	'''
 	At this point, our NN replica is done. We need to make sure all replicas have completed
