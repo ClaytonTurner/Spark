@@ -78,7 +78,7 @@ if __name__ == "__main__":
         label_count = proxy.get_label_count()
         batch_size = proxy.get_minibatch_size()
 
-        random.seed(8000) # should allow stabilization across machines
+        #random.seed(8000) # should allow stabilization across machines
                           # Removes need for initial weight fetch
         layers = [feature_count,10,label_count] # layers - first is input layer. last is output layer. rest is hidden.
         nn = NeuralNetwork(layers)#,activation='sigmoid')

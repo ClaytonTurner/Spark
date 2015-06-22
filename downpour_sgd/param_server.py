@@ -20,8 +20,9 @@ params = []
 client_count = 5 # Needed for syncing and data sharding
 shards_given = 0
 clients_processed = 0
-batch_size = 1 # 150 for iris dataset full batch
+batch_size = 2 # 150 for iris dataset full batch
 #data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
+random.seed(8000)
 data = np.loadtxt("iris.data",delimiter=",") # Labels must be floats
 np.random.shuffle(data)
 label_count = len(set(data[:,-1]))
@@ -48,10 +49,9 @@ def finished_processing():
 	global client_count
 	global clients_processed
 	if client_count == clients_processed:
-		print "finished"
+		print client_count,"clients finished processing"
 		return True
 	else:
-		print "not finished"
 		return False
 
 '''
@@ -70,9 +70,7 @@ def getNextMinibatch():
 def get_data_shard():
         global shards_given
         shards_given += 1
-        print shards_given
         shard = data[(shards_given-1)*len(data)/client_count:(shards_given)*len(data)/client_count,:]
-	print len(shard)
         return base64.b64encode(shard.tostring()),shard.shape
 
 
