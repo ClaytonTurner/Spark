@@ -56,7 +56,8 @@ def get_data_shard():
         global shards_given
         shards_given += 1
         print shards_given
-        shard = data[(shards_given-1)*len(data):(shards_given)*len(data),:]
+        shard = data[(shards_given-1)*len(data)/client_count:(shards_given)*len(data)/client_count,:]
+	print len(shard)
         return base64.b64encode(shard.tostring()),shard.shape
 
 
