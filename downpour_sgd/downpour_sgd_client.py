@@ -10,6 +10,8 @@ import base64
 n_fetch = 1 # fixed in the paper, so let's leave it that way here
 n_push = 1 # same as n_fetch
 batches_processed = 0 # just for this replica
+FINISH_TIMEOUT = 30.0 # How many seconds to wait after a replica is finished 
+		      #		before processing if all training isn't done
 
 '''
 Parameter and Gradient initialization will now happen on the param server
@@ -102,8 +104,14 @@ if __name__ == "__main__":
                                 sys.exit()
                         else:
                                 print "Replica finished processing data shard minibatches. Waiting for testing."
-                        from time import sleep
-                        sleep(5) # When deployed, replace this with a wait from the param server
+			proxy.finish_client()
+                        import time
+			start_wait = time.time()
+			while(not proxy.finished_processing() and time.time() - start_wait < FINISH_TIMEOUT):
+				print "All replicas not complete. " \
+					"Performing sleep(5) until timeout " \
+					"or until all done"
+                        	time.sleep(5) # When deployed, replace this with a wait from the param server
                         fetch_and_set_weights(proxy,nn) # Final weight fetch for each model
                         break
                 #data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()

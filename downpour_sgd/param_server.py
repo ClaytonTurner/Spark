@@ -19,8 +19,8 @@ params = []
 
 client_count = 5 # Needed for syncing and data sharding
 shards_given = 0
-batches_processed = 0
-batch_size = 2 # 150 for iris dataset full batch
+clients_processed = 0
+batch_size = 1 # 150 for iris dataset full batch
 #data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
 data = np.loadtxt("iris.data",delimiter=",") # Labels must be floats
 np.random.shuffle(data)
@@ -38,6 +38,21 @@ def get_feature_count():
 def get_minibatch_size():
         global batch_size
         return batch_size
+
+def finish_client():
+	global clients_processed
+	clients_processed += 1
+	return True
+
+def finished_processing():
+	global client_count
+	global clients_processed
+	if client_count == clients_processed:
+		print "finished"
+		return True
+	else:
+		print "not finished"
+		return False
 
 '''
 def getNextMinibatch():
@@ -90,6 +105,8 @@ if __name__ == "__main__":
         server.register_function(get_label_count)
         server.register_function(get_data_shard)
         server.register_function(get_minibatch_size)
+	server.register_function(finished_processing)
+	server.register_function(finish_client)
         try:
                 server.serve_forever()
         except KeyboardInterrupt:
