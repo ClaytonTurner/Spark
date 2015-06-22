@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.optimize as opti
+import lbfgs
 
 
 def sigmoid(x):
@@ -35,6 +36,8 @@ class NeuralNetwork:
 
         self.weights = 2 * np.random.rand(sum(self.sizes)) - 1
 
+    def get_weights(self):
+        return self.weights
 
     def set_weights(self,params):
         self.weights = params
@@ -87,7 +90,7 @@ class NeuralNetwork:
 
     def jac(self, weights_flattened, X, y):
         m = X.shape[0] # number of instances
-        acc_grad = np.zeros(sum(self.sizes))
+        acc_grad = np.zeros(sum(self.sizes), dtype=np.float64)
         weights = self.unpack_parameters(weights_flattened)
 
         # iterate through instances and accumulate deltas
@@ -115,11 +118,14 @@ class NeuralNetwork:
 
         return (1.0 / m * cost_sum)  
 
-    def fit(self, X, y, epochs=1000):
+    def fit(self, X, y, epochs=1):
 
         for k in range(epochs):
-            if k % 1000 == 0: print 'epochs:', k
-            self.weights, f, d = opti.fmin_l_bfgs_b(self.cost, self.weights, fprime=self.jac, args=(X, y), factr=10.0, pgtol=1e-50, maxiter=200, approx_grad=False)
+            weights1 = lbfgs.fmin_LBFGS(self.cost, self.weights, self.jac, args=(X,y))
+            #weights2, f, d = opti.fmin_l_bfgs_b(self.cost, self.weights, fprime=self.jac, args=(X, y), factr=10.0, pgtol=1e-50, maxiter=200, approx_grad=False)
+            self.weights = weights1
+            #print weights1 - weights2
+
             #gradients = self.jac(self.weights, X, y)
             #self.weights -= 0.2 * gradients
 
@@ -129,21 +135,50 @@ class NeuralNetwork:
         return h_x
 
 
-if __name__ == '__main__':
-
+def trainXORProblem():
     print "This is a test of the neural net on the XOR problem\n"
-
     #nn = NeuralNetwork([2,2,1])
+    #y = np.array([[0], [1], [1], [0]])
     nn = NeuralNetwork([2,2,2])
+    y = np.array([[1,0],[0,1],[0,1],[1,0]])
+    
     X = np.array([[0, 0],
                   [0, 1],
                   [1, 0],
                   [1, 1]])
 
-    #y = np.array([[0], [1], [1], [0]])
-    y = np.array([[1,0],[0,1],[0,1],[1,0]])
+def trainIrisDataset():
+    feature_count = 4
+    label_count = 3
 
-    nn.fit(X, y)
+    nn = NeuralNetwork([feature_count,10,label_count])
+    data = np.loadtxt("iris.data",delimiter=",") # Labels must be floats
+    np.random.shuffle(data)
+    X = data[:,0:-1]
+    flowers = data[:,-1]
+    y = []
+    for f in flowers:
+        ys = [0,0,0]
+        ys[int(f)] = 1
+        y.append(ys)
+    y = np.asarray(y)
 
-    for e in X:
-        print(e,nn.predict(e))
+
+    nn.fit(X, y, 10)
+
+    correct = 0
+    for i, e in enumerate(X):
+        #print(e,nn.predict(e))
+        prediction = list(nn.predict(e))
+        #print "Label: ",y[i]," | Predictions: ",prediction
+        if prediction.index(max(prediction)) == flowers[i]:
+            correct += 1
+    print "Correct: ",correct,"/",i,"(",float(correct)/float(i),"%)"
+
+
+if __name__ == '__main__':
+
+    trainIrisDataset()
+    
+    
+    
