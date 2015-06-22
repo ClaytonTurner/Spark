@@ -121,10 +121,8 @@ class NeuralNetwork:
     def fit(self, X, y, epochs=1):
 
         for k in range(epochs):
-            weights1 = lbfgs.fmin_LBFGS(self.cost, self.weights, self.jac, args=(X,y))
-            #weights2, f, d = opti.fmin_l_bfgs_b(self.cost, self.weights, fprime=self.jac, args=(X, y), factr=10.0, pgtol=1e-50, maxiter=200, approx_grad=False)
-            self.weights = weights1
-            #print weights1 - weights2
+            self.weights = lbfgs.fmin_LBFGS(self.cost, self.weights, self.jac, args=(X,y))
+            #self.weights = opti.fmin_bfgs(self.cost, self.weights, fprime=self.jac, args=(X, y), gtol=1e-50, maxiter=200)
 
             #gradients = self.jac(self.weights, X, y)
             #self.weights -= 0.2 * gradients
@@ -146,6 +144,9 @@ def trainXORProblem():
                   [0, 1],
                   [1, 0],
                   [1, 1]])
+    nn.fit(X, y)
+    for i, e in enumerate(X):
+        print(e,nn.predict(e))
 
 def trainIrisDataset():
     feature_count = 4
@@ -164,7 +165,7 @@ def trainIrisDataset():
     y = np.asarray(y)
 
 
-    nn.fit(X, y, 10)
+    nn.fit(X, y)
 
     correct = 0
     for i, e in enumerate(X):
@@ -177,7 +178,7 @@ def trainIrisDataset():
 
 
 if __name__ == '__main__':
-
+    #trainXORProblem()
     trainIrisDataset()
     
     
