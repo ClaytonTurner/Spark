@@ -6,6 +6,33 @@ def f(x):
 def fprime(x):		
 	return np.array((-2*.5*(1 - x[0]) - 4*x[0]*(x[1] - x[0]**2), 2*(x[1] - x[0]**2)))
 
+def computeDirection(maxHistory, step_K, gf_k, history_S, history_Y, rho):
+	"""
+	returns d_k = B_k * g_k
+	"""
+	upperBound = min(step_K, maxHistory)
+	alpha = np.empty(upperBound, dtype=np.float64)
+
+	for i in range(upperBound-1, -1, -1):
+		alpha[i] = rho[i] * np.dot(history_S[i], gf_k)
+		gf_k = np.subtract(gf_k, alpha[i] * history_Y[i])
+
+	if(step_K == 0):
+		r = np.ones(len(gf_k)) * gf_k
+	else:
+		r = (np.dot(history_S[-1], history_Y[-1]) / np.dot(history_Y[-1], history_Y[-1])) * gf_k
+
+	for i in range(0, upperBound):
+		beta = rho[i] * np.dot(history_Y[i], r)
+		r =  np.add(r, history_S[i] * (alpha[i] - beta))
+
+	return -r
+
+def lineSearch(func, fprime, x_k, d_k, gf_k, old_fval=None, old_old_fval=None, args=()):
+	alpha_K, fc, gc, old_fval, old_old_fval, gf_kp1 = \
+			line_search_wolfe1(func, fprime, x_k, d_k, gf_k, old_fval, old_old_fval, args=args)
+
+	return alpha_K, old_fval, old_old_fval, gf_kp1
 
 def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):
 	"""
@@ -42,18 +69,17 @@ def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):
 	gtol = 1e-50
 	gnorm = np.linalg.norm(gf_k, np.inf)
 
-	I = np.eye(len_x, dtype=int) #################33###
-	Hk = I
-
 	while (gnorm > gtol) and (step_K < maxIter):
 
 		#direction d_k = - B_k * g_k
 		d_k = computeDirection(maxHistory, step_K, gf_k, history_S, history_Y, rho)
 
 		#lineSearch 
-		alpha_K, fc, gc, old_fval, old_old_fval, gf_kp1 = \
-							line_search_wolfe1(func, funcprime, x_k, d_k, gf_k, old_fval, old_old_fval, args=args)
-		
+		#alpha_K, fc, gc, old_fval, old_old_fval, gf_kp1 = \
+			#line_search_wolfe1(func, funcprime, x_k, d_k, gf_k, old_fval, old_old_fval, args=args)
+		alpha_K, old_fval, old_old_fval, gf_kp1 = \
+			lineSearch(func, funcprime, x_k, d_k, gf_k, old_fval, old_old_fval, args)
+
 		if(alpha_K is None):
 			# Line search failed to find a better solution.
 			warnFlag = 1
@@ -92,26 +118,6 @@ def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):
 	print "function value", old_fval
 	return x_k
 
-
-def computeDirection(maxHistory, step_K, gf_k, history_S, history_Y, rho):
-	
-	upperBound = min(step_K, maxHistory)
-	alpha = np.empty(upperBound, dtype=np.float64)
-
-	for i in range(upperBound-1, -1, -1):
-		alpha[i] = rho[i] * np.dot(history_S[i], gf_k)
-		gf_k = np.subtract(gf_k, alpha[i] * history_Y[i])
-
-	if(step_K == 0):
-		r = np.ones(len(gf_k)) * gf_k
-	else:
-		r = (np.dot(history_S[-1], history_Y[-1]) / np.dot(history_Y[-1], history_Y[-1])) * gf_k
-
-	for i in range(0, upperBound):
-		beta = rho[i] * np.dot(history_Y[i], r)
-		r =  np.add(r, history_S[i] * (alpha[i] - beta))
-
-	return -r
 
 if __name__ == '__main__':
 	print fmin_LBFGS(f, [2.,2.], fprime)
