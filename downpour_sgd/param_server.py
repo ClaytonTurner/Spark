@@ -20,7 +20,7 @@ params = []
 client_count = 5 # Needed for syncing and data sharding
 shards_given = 0
 clients_processed = 0
-batch_size = 2 # 150 for iris dataset full batch
+batch_size = 15 # 150 for iris dataset full batch
 #data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
 random.seed(8000)
 data = np.loadtxt("iris.data",delimiter=",") # Labels must be floats

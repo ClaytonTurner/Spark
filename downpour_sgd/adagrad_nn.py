@@ -72,12 +72,14 @@ class NeuralNetwork:
             # 1. Multiply its output delta and input activation 
             #    to get the gradient of the weight.
             # 2. Subtract a ratio (percentage) of the gradient from the weight.
+	    adagrad_cache = [0 for x in range(len(self.weights))]
             for i in range(len(self.weights)):
                 layer = np.atleast_2d(a[i])
                 delta = np.atleast_2d(deltas[i])
 		self.weights[i] = np.array(self.weights[i]).copy() # This prevents discontiguous memory errors
-               	self.weights[i] += learning_rate * layer.T.dot(delta)
-		print "test",layer.T.dot(delta)
+		grad = layer.T.dot(delta)
+		adagrad_cache[i] += grad**2
+               	self.weights[i] += learning_rate * grad / np.sqrt(adagrad_cache[i] + 1e-8)
 
 
     def predict(self, x): 
@@ -100,7 +102,7 @@ if __name__ == '__main__':
     #y = np.array([0, 1, 1, 0])
     y = np.array([[1,0],[0,1],[0,1],[1,0]])
 
-    nn.fit(X, y)
+    nn.fit(X, y, learning_rate=0.1)
 
     for e in X:
         print(e,nn.predict(e))

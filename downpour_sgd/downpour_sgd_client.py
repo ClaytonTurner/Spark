@@ -3,14 +3,14 @@ import sys
 from math import sqrt
 import random
 import xmlrpclib
-from neural_net import NeuralNetwork
+from adagrad_nn import NeuralNetwork
 import numpy as np
 import base64
 
 n_fetch = 1 # fixed in the paper, so let's leave it that way here
 n_push = 1 # same as n_fetch
 batches_processed = 0 # just for this replica
-FINISH_TIMEOUT = 30.0 # How many seconds to wait after a replica is finished 
+FINISH_TIMEOUT = 120.0 # How many seconds to wait after a replica is finished 
 		      #		before processing if all training isn't done
 
 '''
@@ -116,7 +116,7 @@ if __name__ == "__main__":
                         break
                 #data = np.frombuffer(base64.decodestring(data),dtype=np.float64) #.fromstring()
                 x,y = slice_data(data,shape,label_count)#,label_count)
-                nn.fit(x,y,learning_rate=0.1,epochs=1000)
+                nn.fit(x,y,learning_rate=0.2,epochs=100000)
                 accrued_gradients = compute_gradient(nn)
                 if step%n_push == 0: # Always true in fixed case
                         ag_shape = accrued_gradients[0].shape
