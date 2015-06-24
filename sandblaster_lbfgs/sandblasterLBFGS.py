@@ -47,31 +47,34 @@ if (__name__ == "__main__"):
 	nn = NeuralNetwork(layers)
 	costFunction = nn.cost
 	jacFunction = nn.jac
-	step = 0
 	len_params = sum(nn.sizes)
 	PS.initializeParameters(nn.get_weights())
-	modelReplicas = [ModelReplica(len_params)]
+	modelReplicas = [ModelReplica(len_params)]#, ModelReplica(len_params)]
 
 
 	X, y = sliceData(PS.getAllData())
 	old_fval = costFunction(PS.getParameters(), X, y)
 	old_old_fval = None
-
-	while(step < 100):
+	
+	step = 0
+	gtol = 1e-5
+	
+	while(step < 500):
 		PS.initializeGradients(len_params)
+		PS.batches_processed = 0
 
 		while(not PS.didFinishBatches()):
-			for mr in modelReplicas:
-				processPortion(mr, step, nn)
-				PS.sendGradients(mr.getLocalAccruedGrad())
+			for replica in modelReplicas:
+				processPortion(replica, step, nn)
+				localGrad = replica.getLocalAccruedGrad()
+				PS.sendGradients(localGrad)
+				replica.accruedGradients = np.zeros(len_params)
 
+		grad = PS.getAccruedGradients()
+		params = PS.getParameters()
 		history_S = PS.getHistory_S()
 		history_Y = PS.getHistory_Y()
 		rho = PS.getRho()
-		grad = PS.getAccruedGradients()
-		params = PS.getParameters()
-		
-		#allgrad = nn.jac(params, X, y)
 
 		d_k = lbfgs.computeDirection(maxHistory, step, grad, history_S, history_Y, rho)
 
@@ -84,6 +87,22 @@ if (__name__ == "__main__"):
 
 		PS.updateParameters(step, d_k, alpha_k, maxHistory, gf_kp1)
 
+		if(np.linalg.norm(PS.getAccruedGradients(), np.inf) < gtol):
+			print "converged!!"
+			break
+
 		step += 1
+
+
 	print step
 	print costFunction(PS.getParameters(), X, y)
+
+	nn.set_weights(PS.getParameters())
+	correct = 0
+	for i, e in enumerate(X):
+		#print(e,nn.predict(e))
+		prediction = list(nn.predict(e))
+		#print "Label: ",y[i]," | Predictions: ",prediction
+		if prediction.index(max(prediction)) == y[i].index(max(y[i])):
+			correct += 1
+	print "Correct: ",correct,"/",i,"(",float(correct)/float(i),"%)"

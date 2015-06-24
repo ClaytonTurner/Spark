@@ -31,7 +31,6 @@ def computeDirection(maxHistory, step_K, gf_k, history_S, history_Y, rho):
 def lineSearch(func, fprime, x_k, d_k, gf_k, old_fval=None, old_old_fval=None, args=()):
 	alpha_K, fc, gc, old_fval, old_old_fval, gf_kp1 = \
 			line_search_wolfe1(func, fprime, x_k, d_k, gf_k, old_fval, old_old_fval, args=args)
-
 	return alpha_K, old_fval, old_old_fval, gf_kp1
 
 def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):

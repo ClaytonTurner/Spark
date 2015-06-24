@@ -16,7 +16,7 @@ history_Y = [] #y_k = gf_kp1 - gf_k
 rho = []  #rho_k = 1.0 / (s_k * y_k)
 
 batches_processed = 0
-batch_size = 5
+batch_size = 10
 
 #data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
 data = np.loadtxt("iris.data",delimiter=",") # Labels must be floats
@@ -55,7 +55,9 @@ def getDataPortion():
 def sendGradients(localAccruedGrad):
 	# Update the gradients on the server
 	global accruedGradients
-	accruedGradients += localAccruedGrad
+	batches_number = len(data) / batch_size
+	#Dividing the gradients by the number of batches is needed to normalize those values
+	accruedGradients += (localAccruedGrad / batches_number)
 
 def getAccruedGradients():
 	return accruedGradients
@@ -94,7 +96,6 @@ def updateParameters(step_k, d_k, alpha_k, maxHistory, gf_kp1):
 	rho.append(1.0 / (np.dot(s_k, y_k)))
 
 	params = newParams #update the weights
-
 
 if __name__ == "__main__":
 	print "Starting Param Server. Ctrl + C to quit\n"
