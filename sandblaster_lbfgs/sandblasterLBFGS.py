@@ -2,23 +2,6 @@ import numpy as np
 import paramServer as PS
 from modelReplica import ModelReplica
 from neural_net import NeuralNetwork
-import lbfgs
-
-
-
-# def sliceData(data):
-# 	# This function assumes np.array as the type for data
-# 	# This function separates data into X (features) and Y (label) for the NN
-# 	x = data[:,:-1]
-# 	label_count = PS.get_label_count()
-# 	labels = data[:,-1] # We don't know how many we have due to minibatch size 
-# 	ys = []
-# 	for l in labels: # This sets up probabilities as outputs | 1 per output class
-# 		temp_y = [0 for i in range(label_count)]
-# 		temp_y[int(l)] = 1 # we can cast this because we know labels are ints and not a weird float
-# 		ys.append(temp_y)
-# 	y = ys
-# 	return x,y
 
 def computeGradient(nn, weights, data):
 	X, y = data 
@@ -41,8 +24,6 @@ def processPortion(modelReplica, step, nn):
 		return True
 
 
-
-
 if (__name__ == "__main__"):
 
 	feature_count = PS.get_feature_count()
@@ -50,14 +31,10 @@ if (__name__ == "__main__"):
 	layers = [feature_count, 10, label_count] # layers - 1 = hidden layers
 	
 	nn = NeuralNetwork(layers)
-	costFunction = nn.cost
-	jacFunction = nn.jac
 	len_params = sum(nn.sizes)
 	modelReplicas = [ModelReplica(len_params), ModelReplica(len_params)]
 
-
-	X, y = PS.getAllData()
-	old_fval = costFunction(PS.getParameters(), X, y)
+	old_fval = None
 	old_old_fval = None
 	
 	step = 0
@@ -92,7 +69,8 @@ if (__name__ == "__main__"):
 
 
 	print step
-	print costFunction(PS.getParameters(), X, y)
+	X, y = PS.getAllData()
+	print nn.cost(PS.getParameters(), X, y)
 
 	nn.set_weights(PS.getParameters())
 	correct = 0

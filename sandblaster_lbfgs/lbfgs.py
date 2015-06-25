@@ -1,11 +1,6 @@
 import numpy as np
 from scipy.optimize.linesearch import line_search_wolfe1
 
-def f(x):
-	return .5*(1 - x[0])**2 + (x[1] - x[0]**2)**2		
-def fprime(x):		
-	return np.array((-2*.5*(1 - x[0]) - 4*x[0]*(x[1] - x[0]**2), 2*(x[1] - x[0]**2)))
-
 def computeDirection(maxHistory, step_K, gf_k, history_S, history_Y, rho):
 	"""
 	returns d_k = B_k * g_k
@@ -118,5 +113,10 @@ def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):
 	return x_k
 
 
+def f(x):
+	return .5*(1 - x[0])**2 + (x[1] - x[0]**2)**2		
+def fprime(x):		
+	return np.array((-2*.5*(1 - x[0]) - 4*x[0]*(x[1] - x[0]**2), 
+						2*(x[1] - x[0]**2)))
 if __name__ == '__main__':
 	print fmin_LBFGS(f, [2.,2.], fprime)
