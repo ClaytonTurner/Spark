@@ -6,22 +6,22 @@ import lbfgs
 
 
 
-def sliceData(data):
-	# This function assumes np.array as the type for data
-	# This function separates data into X (features) and Y (label) for the NN
-	x = data[:,:-1]
-	label_count = PS.get_label_count()
-	labels = data[:,-1] # We don't know how many we have due to minibatch size 
-	ys = []
-	for l in labels: # This sets up probabilities as outputs | 1 per output class
-		temp_y = [0 for i in range(label_count)]
-		temp_y[int(l)] = 1 # we can cast this because we know labels are ints and not a weird float
-		ys.append(temp_y)
-	y = ys
-	return x,y
+# def sliceData(data):
+# 	# This function assumes np.array as the type for data
+# 	# This function separates data into X (features) and Y (label) for the NN
+# 	x = data[:,:-1]
+# 	label_count = PS.get_label_count()
+# 	labels = data[:,-1] # We don't know how many we have due to minibatch size 
+# 	ys = []
+# 	for l in labels: # This sets up probabilities as outputs | 1 per output class
+# 		temp_y = [0 for i in range(label_count)]
+# 		temp_y[int(l)] = 1 # we can cast this because we know labels are ints and not a weird float
+# 		ys.append(temp_y)
+# 	y = ys
+# 	return x,y
 
 def computeGradient(nn, weights, data):
-	X, y = sliceData(data) 
+	X, y = data 
 	gradients = nn.jac(weights, X, y)
 	return gradients
 
@@ -31,15 +31,20 @@ def processPortion(modelReplica, step, nn):
 		modelReplica.setParams(params, step)
 	else:
 		params = modelReplica.getParams(step)
+
 	data = PS.getDataPortion()
-	gradients = computeGradient(nn, params, data)
-	modelReplica.updateAccruedGradients(gradients)
+	if(data is None):
+		return False
+	else:
+		gradients = computeGradient(nn, params, data)
+		modelReplica.updateAccruedGradients(gradients)
+		return True
 
 
 
 
 if (__name__ == "__main__"):
-	maxHistory = 10 #max number of updates that should be held
+
 	feature_count = PS.get_feature_count()
 	label_count = PS.get_label_count()
 	layers = [feature_count, 10, label_count] # layers - 1 = hidden layers
@@ -48,11 +53,10 @@ if (__name__ == "__main__"):
 	costFunction = nn.cost
 	jacFunction = nn.jac
 	len_params = sum(nn.sizes)
-	PS.initializeParameters(nn.get_weights())
-	modelReplicas = [ModelReplica(len_params)]#, ModelReplica(len_params)]
+	modelReplicas = [ModelReplica(len_params), ModelReplica(len_params)]
 
 
-	X, y = sliceData(PS.getAllData())
+	X, y = PS.getAllData()
 	old_fval = costFunction(PS.getParameters(), X, y)
 	old_old_fval = None
 	
@@ -60,32 +64,25 @@ if (__name__ == "__main__"):
 	gtol = 1e-5
 	
 	while(step < 500):
-		PS.initializeGradients(len_params)
+		PS.zeroOutGradients()
 		PS.batches_processed = 0
 
 		while(not PS.didFinishBatches()):
 			for replica in modelReplicas:
-				processPortion(replica, step, nn)
-				localGrad = replica.getLocalAccruedGrad()
-				PS.sendGradients(localGrad)
-				replica.accruedGradients = np.zeros(len_params)
+				if(processPortion(replica, step, nn)):
+					localGrad = replica.getLocalAccruedGrad()
+					PS.sendGradients(localGrad)
+					replica.accruedGradients[:] = 0
 
-		grad = PS.getAccruedGradients()
-		params = PS.getParameters()
-		history_S = PS.getHistory_S()
-		history_Y = PS.getHistory_Y()
-		rho = PS.getRho()
+		direction_k = PS.computeLBFGSDirection(step)
+		alpha_k, old_fval, old_old_fval, gf_kp1 = \
+						PS.lineSearch(direction_k, old_fval, old_old_fval)
 
-		d_k = lbfgs.computeDirection(maxHistory, step, grad, history_S, history_Y, rho)
-
-		alpha_k, old_fval, old_old_fval, gf_kp1 = lbfgs.lineSearch(costFunction, jacFunction, params, d_k, grad, old_fval, old_old_fval, args=(X,y))
-
-		if(alpha_k is None):
-			# Line search failed to find a better solution.
+		if(alpha_k is None): # Line search failed to find a better solution.
 			print "Stopped because line search did not converge"
 			break
 
-		PS.updateParameters(step, d_k, alpha_k, maxHistory, gf_kp1)
+		PS.updateParameters(step, direction_k, alpha_k, gf_kp1)
 
 		if(np.linalg.norm(PS.getAccruedGradients(), np.inf) < gtol):
 			print "converged!!"
