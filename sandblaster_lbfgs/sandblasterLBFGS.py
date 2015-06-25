@@ -3,36 +3,24 @@ import paramServer as PS
 from modelReplica import ModelReplica
 from neural_net import NeuralNetwork
 
-def computeGradient(nn, weights, data):
-	X, y = data 
-	gradients = nn.jac(weights, X, y)
-	return gradients
-
-def processPortion(modelReplica, step, nn):
+def processPortion(modelReplica, step):
 	if(not modelReplica.hasParametersForStep(step)):
 		params = PS.getParameters()
 		modelReplica.setParams(params, step)
-	else:
-		params = modelReplica.getParams(step)
 
 	data = PS.getDataPortion()
 	if(data is None):
 		return False
 	else:
-		gradients = computeGradient(nn, params, data)
+		gradients = modelReplica.computeGradient(data)
 		modelReplica.updateAccruedGradients(gradients)
 		return True
 
 
 if (__name__ == "__main__"):
 
-	feature_count = PS.get_feature_count()
-	label_count = PS.get_label_count()
-	layers = [feature_count, 10, label_count] # layers - 1 = hidden layers
-	
-	nn = NeuralNetwork(layers)
-	len_params = sum(nn.sizes)
-	modelReplicas = [ModelReplica(len_params), ModelReplica(len_params)]
+	neuralNetLayers = PS.getNeuralNetLayers()
+	modelReplicas = [ModelReplica(neuralNetLayers), ModelReplica(neuralNetLayers)]
 
 	old_fval = None
 	old_old_fval = None
@@ -46,10 +34,14 @@ if (__name__ == "__main__"):
 
 		while(not PS.didFinishBatches()):
 			for replica in modelReplicas:
-				if(processPortion(replica, step, nn)):
-					localGrad = replica.getLocalAccruedGrad()
-					PS.sendGradients(localGrad)
-					replica.accruedGradients[:] = 0
+
+				#should verify if a portion was processed properly
+				processPortion(replica, step)
+					
+				#workDone
+				localGrad = replica.getLocalAccruedGrad()
+				PS.sendGradients(localGrad)
+				replica.accruedGradients[:] = 0
 
 		direction_k = PS.computeLBFGSDirection(step)
 		alpha_k, old_fval, old_old_fval, gf_kp1 = \
@@ -70,6 +62,7 @@ if (__name__ == "__main__"):
 
 	print step
 	X, y = PS.getAllData()
+	nn = NeuralNetwork(neuralNetLayers)
 	print nn.cost(PS.getParameters(), X, y)
 
 	nn.set_weights(PS.getParameters())

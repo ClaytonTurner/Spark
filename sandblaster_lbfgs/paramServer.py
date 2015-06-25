@@ -33,8 +33,8 @@ X, y = sliceData(rawData)
 dataSetSize = len(X)
 
 ####### WARNING!!! It has to be changed######
-layers = [feature_count, 10, label_count]	#
-nn = NeuralNetwork(layers)					#
+NNlayers = [feature_count, 10, label_count]	#
+nn = NeuralNetwork(NNlayers)				#
 costFunction = nn.cost 						#
 jacFunction = nn.jac 	 					#
 #############################################
@@ -49,7 +49,8 @@ rho = []  #rho_k = 1.0 / (s_k * y_k)
 batches_processed = 0
 batch_size = 10
 
-
+def getNeuralNetLayers():
+	return NNlayers
 
 def zeroOutGradients():
 	global accruedGradients
