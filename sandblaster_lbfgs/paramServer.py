@@ -1,15 +1,11 @@
 import sys
 from SimpleXMLRPCServer import SimpleXMLRPCServer
-from math import sqrt
 import random
 import socket
-import numpy as np
 import base64
+import numpy as np
 import lbfgs
 from neural_net import NeuralNetwork
-
-HOST = socket.gethostname()
-PORT = 8000
 
 def sliceData(data):
 	# This function assumes np.array as the type for data
@@ -21,7 +17,7 @@ def sliceData(data):
 		temp_y = [0 for i in range(label_count)]
 		temp_y[int(l)] = 1 # we can cast this because we know labels are ints and not a weird float
 		ys.append(temp_y)
-	y = ys
+	y = np.asarray(ys)
 	return x,y
 
 #data = np.array([[0,0,0],[0,1,1],[1,0,1],[1,1,0]],dtype=np.float64)
@@ -49,6 +45,20 @@ rho = []  #rho_k = 1.0 / (s_k * y_k)
 batches_processed = 0
 batch_size = 10
 
+
+def processedBatches():
+	return batches_processed
+
+def resetParamServer():
+	global params, accruedGradients, history_S, history_Y, rho,batches_processed
+	
+	params = nn.get_weights()
+	accruedGradients = np.zeros(sum(nn.sizes))
+	history_S = []
+	history_Y = []
+	rho = []
+	batches_processed = 0
+
 def getNeuralNetLayers():
 	return NNlayers
 
@@ -66,40 +76,42 @@ def didFinishBatches():
 	return batches_processed*batch_size >= dataSetSize
 
 def getAllData():
-	return X, y
+	shape_x = X.shape
+	shape_y = y.shape
+	return base64.b64encode(X.tostring()), shape_x, base64.b64encode(y.tostring()), shape_y
 
 def getDataPortion():
 	global batches_processed
-
 	minibatch_start = batches_processed*batch_size
-	#Since models replicas run asynchronous, this condicional is needed
-		#to do not run out of the bounds
-	if(minibatch_start >= dataSetSize):
-		return None
-	else:
-		minibatch_end = min((minibatch_start+batch_size), dataSetSize)
-		minibatch = X[minibatch_start:minibatch_end], y[minibatch_start:minibatch_end]
-		batches_processed += 1 
-		return minibatch
-
-def sendGradients(localAccruedGrad):
-	# Update the gradients on the server
-	global accruedGradients
-	batches_number = dataSetSize / batch_size
-	#Dividing the gradients by the number of batches is needed to normalize those values
-	accruedGradients += (localAccruedGrad / batches_number)
+	assert minibatch_start < dataSetSize, "minibatch starting out of the bound"
+	
+	minibatch_end = min((minibatch_start+batch_size), dataSetSize)
+	minibatch_x = X[minibatch_start:minibatch_end]
+	shape_x = minibatch_x.shape
+	minibatch_y = y[minibatch_start:minibatch_end]
+	shape_y = minibatch_y.shape
+	batches_processed += 1
+	return base64.b64encode(minibatch_x.tostring()), shape_x, base64.b64encode(minibatch_y.tostring()), shape_y
 
 def getAccruedGradients():
-	return accruedGradients
+	return base64.b64encode(accruedGradients)
 
 def getParameters():
-	return params
+	return base64.b64encode(params)
+
+def sendGradients(encodedLocalGrad):
+	# Update the gradients on the server
+	global accruedGradients
+	localGrad = np.frombuffer(base64.decodestring(encodedLocalGrad),dtype=np.float64)
+	batches_number = dataSetSize / batch_size
+	#Dividing the gradients by the number of batches is needed to normalize those values
+	accruedGradients += (localGrad / batches_number)
 
 def computeLBFGSDirection(step):
 	d_k = lbfgs.computeDirection(maxHistory, step, accruedGradients, history_S, history_Y, rho)
-	return d_k
+	return base64.b64encode(d_k)
 
-def lineSearch(direction_k, fval_x_k, fval_x_km1):
+def lineSearch(encoded_d_k, fval_x_k, fval_x_km1):
 	"""
 	returns:
 		alpha_k: float or None
@@ -111,12 +123,15 @@ def lineSearch(direction_k, fval_x_k, fval_x_km1):
 		gf_kp1 : float or None
 			myfprime(x_kp1), or None if the line search algorithm did not converge.
 	"""
-	alpha_k, new_fval, old_fval, gf_kp1 = lbfgs.lineSearch(costFunction, jacFunction, params, direction_k, accruedGradients, fval_x_k, fval_x_km1, args=(X,y))
-	return (alpha_k, new_fval, old_fval, gf_kp1)
+	d_k = np.frombuffer(base64.decodestring(encoded_d_k),dtype=np.float64)
+	alpha_k, new_fval, old_fval, gf_kp1 = lbfgs.lineSearch(costFunction, jacFunction, params, d_k, accruedGradients, fval_x_k, fval_x_km1, args=(X,y))
+	return (alpha_k, new_fval, float(old_fval), base64.b64encode(gf_kp1))
 
-def updateParameters(step, d_k, alpha_k, gf_kp1):
+def updateParameters(step, encoded_d_k, alpha_k, encoded_gf_kp1):
 	global params, history_S, history_Y, rho
 
+	d_k = np.frombuffer(base64.decodestring(encoded_d_k),dtype=np.float64)
+	gf_kp1 = np.frombuffer(base64.decodestring(encoded_gf_kp1),dtype=np.float64)
 	newParams = params + alpha_k * d_k  #x_kp1 = x_k + alpha_K * d_k
 
 	if(step > maxHistory):
@@ -134,15 +149,27 @@ def updateParameters(step, d_k, alpha_k, gf_kp1):
 	params = newParams #update the weights
 
 if __name__ == "__main__":
+	HOST = socket.gethostbyname(socket.gethostname())
+	PORT = 8000
 	print "Starting Param Server. Ctrl + C to quit\n"
-	server = SimpleXMLRPCServer((HOST,PORT))
-	print "Listening on port "+str(PORT)+"..."
+	server = SimpleXMLRPCServer((HOST,PORT), allow_none=True)
+	print "Listening on port "+str(PORT)
+	server.register_function(resetParamServer)
+	server.register_function(getNeuralNetLayers)
+	server.register_function(zeroOutGradients)
+	server.register_function(get_feature_count)
+	server.register_function(get_label_count)
 	server.register_function(didFinishBatches)
+	server.register_function(getAllData)
 	server.register_function(getDataPortion)
 	server.register_function(sendGradients)
-	server.register_function(getParametersFromParamServer)
+	server.register_function(getAccruedGradients)
+	server.register_function(getParameters)
+	server.register_function(computeLBFGSDirection)
+	server.register_function(lineSearch)
+	server.register_function(updateParameters)
+	server.register_function(processedBatches)
 	try:
 		server.serve_forever()
 	except KeyboardInterrupt:
 		print "Keyboard interrupt: exiting"
-

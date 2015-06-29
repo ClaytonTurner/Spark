@@ -8,6 +8,7 @@ class ModelReplica:
 		self.neuralNet = NeuralNetwork(neuralNetLayers)
 		self.currentParamsStep = None
 		self.accruedGradients = np.zeros(sum(self.neuralNet.sizes))
+		self.isAvailable = True
 
 	def hasParametersForStep(self, step):
 		return step == self.currentParamsStep
@@ -26,7 +27,6 @@ class ModelReplica:
 	def getLocalAccruedGrad(self):
 		return self.accruedGradients
 
-	def computeGradient(self, data):
-		X, y = data 
-		gradients = self.neuralNet.jac(self.params, X, y)
+	def computeGradient(self, x, y):
+		gradients = self.neuralNet.jac(self.params, x, y)
 		return gradients
