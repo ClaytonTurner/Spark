@@ -24,13 +24,13 @@ def processPortion(proxy, modelReplica, step):
 	#lock avoids more than one replica processing a same subset of data
 	dataLock.acquire()
 	if(not proxy.didFinishBatches()):
-		print 'before', proxy.processedBatches()
+		#print 'before', proxy.processedBatches()
 		encoded_x, shape_x, encoded_y, shape_y = proxy.getDataPortion()
-		print 'after', proxy.processedBatches()
+		#print 'after', proxy.processedBatches()
 		dataLock.release()
 	
 		x = np.frombuffer(base64.decodestring(encoded_x),dtype=np.float64).reshape(shape_x)
-		y = np.frombuffer(base64.decodestring(encoded_y),dtype=np.float64).reshape(shape_y)
+		y = np.frombuffer(base64.decodestring(encoded_y),dtype=np.int).reshape(shape_y)
 
 		gradients = modelReplica.computeGradient(x, y)
 		modelReplica.updateAccruedGradients(gradients)
@@ -77,10 +77,8 @@ if (__name__ == "__main__"):
 
 	while(step < 500):
 		proxy.zeroOutGradients()
-		proxy.batches_processed = 0
-	
-		processes = []
-
+		proxy.zeroOutBatchesProcessed()
+		
 		while(not proxy.didFinishBatches()):
 		
 			replica = queue.get()
@@ -116,7 +114,7 @@ if (__name__ == "__main__"):
 	print step
 	encoded_x, shape_x, encoded_y, shape_y = proxy.getAllData()
 	X = np.frombuffer(base64.decodestring(encoded_x),dtype=np.float64).reshape(shape_x)
-	y = np.frombuffer(base64.decodestring(encoded_y),dtype=np.float64).reshape(shape_y)
+	y = np.frombuffer(base64.decodestring(encoded_y),dtype=np.int).reshape(shape_y)
 
 	nn = NeuralNetwork(neuralNetLayers)
 	encoded_params = proxy.getParameters()

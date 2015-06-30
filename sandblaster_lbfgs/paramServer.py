@@ -66,6 +66,10 @@ def zeroOutGradients():
 	global accruedGradients
 	accruedGradients[:] = 0
 
+def zeroOutBatchesProcessed():
+	global batches_processed
+	batches_processed = 0
+
 def get_label_count(): # This is for setting up multiple labels for the replicas
 	return label_count
 
@@ -168,6 +172,7 @@ if __name__ == "__main__":
 	server.register_function(computeLBFGSDirection)
 	server.register_function(lineSearch)
 	server.register_function(updateParameters)
+	server.register_function(zeroOutBatchesProcessed)
 	server.register_function(processedBatches)
 	try:
 		server.serve_forever()
