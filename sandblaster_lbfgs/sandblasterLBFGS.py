@@ -7,6 +7,7 @@ import numpy as np
 from modelReplica import ModelReplica
 from neural_net import NeuralNetwork
 from multiprocessing import Process, Queue, Lock
+import time
 
 dataLock = Lock()
 queue = Queue()
@@ -24,9 +25,7 @@ def processPortion(proxy, modelReplica, step):
 	#lock avoids more than one replica processing a same subset of data
 	dataLock.acquire()
 	if(not proxy.didFinishBatches()):
-		#print 'before', proxy.processedBatches()
 		encoded_x, shape_x, encoded_y, shape_y = proxy.getDataPortion()
-		#print 'after', proxy.processedBatches()
 		dataLock.release()
 	
 		x = np.frombuffer(base64.decodestring(encoded_x),dtype=np.float64).reshape(shape_x)
@@ -36,6 +35,7 @@ def processPortion(proxy, modelReplica, step):
 		modelReplica.updateAccruedGradients(gradients)
 		return True
 	else:
+		dataLock.release()
 		return False
 
 def runModelReplica(proxy, replica, step):
@@ -46,9 +46,7 @@ def runModelReplica(proxy, replica, step):
 		localGrad = replica.getLocalAccruedGrad()
 		proxy.sendGradients(base64.b64encode(localGrad))
 		replica.accruedGradients[:] = 0
-	else:
-		queue.close()
-	
+
 	queue.put(replica)
 	return wasPortionProcessed
 
@@ -75,20 +73,23 @@ if (__name__ == "__main__"):
 	for replica in modelReplicas:
 		queue.put(replica)
 
+	startTime = time.time()
 	while(step < 500):
 		proxy.zeroOutGradients()
 		proxy.zeroOutBatchesProcessed()
 		
+		processes = []
+
 		while(not proxy.didFinishBatches()):
-		
+			
 			replica = queue.get()
-			runModelReplica(proxy, replica, step)
-			# process = Process(target=runModelReplica, args=(replica, step))
-			# processes.append(process)
-			# process.start()
-		
-		# for process in processes:
-		# 	process.join()
+			#runModelReplica(proxy, replica, step)
+			process = Process(target=runModelReplica, args=(proxy, replica, step))
+			processes.append(process)
+			process.start()
+
+		for process in processes:
+			process.join()
 
 		encoded_d_k = proxy.computeLBFGSDirection(step)
 		
@@ -101,7 +102,6 @@ if (__name__ == "__main__"):
 
 		proxy.updateParameters(step, encoded_d_k, alpha_k, encoded_gf_kp1)
 
-
 		encoded_grads = proxy.getAccruedGradients()
 		accruedGradients = np.frombuffer(base64.decodestring(encoded_grads), dtype=np.float64)
 		if(np.linalg.norm(accruedGradients, np.inf) < gtol):
@@ -110,8 +110,9 @@ if (__name__ == "__main__"):
 
 		step += 1
 
-
 	print step
+	print 'process time:', time.time() - startTime
+
 	encoded_x, shape_x, encoded_y, shape_y = proxy.getAllData()
 	X = np.frombuffer(base64.decodestring(encoded_x),dtype=np.float64).reshape(shape_x)
 	y = np.frombuffer(base64.decodestring(encoded_y),dtype=np.int).reshape(shape_y)
