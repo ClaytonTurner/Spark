@@ -11,7 +11,8 @@ n_fetch = 1 # fixed in the paper, so let's leave it that way here
 n_push = 1 # same as n_fetch
 batches_processed = 0 # just for this replica
 FINISH_TIMEOUT = 120.0 # How many seconds to wait after a replica is finished 
-		      #		before processing if all training isn't done
+		       # 	before processing if all training isn't done
+		       # Change relative to epochs
 
 '''
 Parameter and Gradient initialization will now happen on the param server
