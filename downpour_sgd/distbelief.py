@@ -47,15 +47,32 @@ class DistBelief:
 	machines_x,machines_y = machines
 	machine_nodes = [[] for i in range(sum(machines))] #list of lists. each top level list represents a machine
 			   # each sublist represents nodes at that layer
-	for i in range(len(layers)):
-		nodes_in_layer = layers[i]
-		for j in range(len(machine_nodes)):
-			base_count = nodes_in_layer/machines_x
-			if j == (len(machine_nodes)-1):
-				machine_nodes[j].append(base_count + nodes_in_layer%machines_x) # last machine gets imbalanced - we may want to just force a balance  
+	# Set up the parallelization nodes for the y
+	y_section = []
+	for i in range(machines_y):
+		y_section.append(layers[i*len(layers)/machines_y:(i+1)*len(layers)/machines_y])
+	y_flat = [item for sublist in y_section for item in sublist]
+	new_rep = []
+	for y in y_section:
+		i = 0
+		for mach in y:
+			if i == 0:
+				start = y_flat.index(mach)
+			end = y_flat.index(mach)
+			print i
+			print "start",start
+			print "end",end
+			i += 1
+		temp_rep = []
+		for i in range(len(y_flat)):
+			if i >= start and i <= end:
+				temp_rep.append(y_flat[i])
 			else:
-				machine_nodes[j].append(base_count)
-	
+				temp_rep.append(0)
+		new_rep.append(temp_rep)
+	# Set up the parallelization nodes for the x
+
+
         # Set weights
         self.weights = []
         # layers = [2,2,1]
