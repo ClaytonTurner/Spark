@@ -71,7 +71,10 @@ class DistBelief:
 				temp_rep.append(0)
 		new_rep.append(temp_rep)
 	# Set up the parallelization nodes for the x
-
+	final_rep = []
+	for mach in new_rep:
+		for i in range(machines_x):
+			final_rep.append(x/machines_x for x in mach])
 
         # Set weights
         self.weights = []
