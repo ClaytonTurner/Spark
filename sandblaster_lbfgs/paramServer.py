@@ -29,11 +29,10 @@ feature_count = len(rawData[0])-1
 X, y = sliceData(rawData)
 dataSetSize = len(X)
 
-####### WARNING!!! It has to be changed######
+#######neural network #######################
 NNlayers = [feature_count, 10, label_count]	#
 nn = NeuralNetwork(NNlayers)				#
-costFunction = nn.cost 						#
-jacFunction = nn.jac 	 					#
+costFunction = nn.cost	 					#
 #############################################
 
 params = nn.get_weights() #weights

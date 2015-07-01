@@ -66,7 +66,7 @@ if (__name__ == "__main__"):
 	fval_x_k = None
 	
 	step = 0
-	gtol = 1e-5
+	gtol = 1e-10
 
 	queueLock = Lock()
 	for replica in modelReplicas:
@@ -95,7 +95,7 @@ if (__name__ == "__main__"):
 		alpha_k, fval_x_k = proxy.lineSearch(encoded_d_k, fval_x_k)
 
 		if(alpha_k is None): # Line search failed to find a better solution.
-			print "Line search did not converge. Set alpha_k = 0"
+			print 'Step:', step, "Line search did not converge. Set alpha_k = 0"
 			alpha_k = 0
 
 		proxy.updateParameters(step, encoded_d_k, alpha_k)

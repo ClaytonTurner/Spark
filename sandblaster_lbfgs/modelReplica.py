@@ -17,10 +17,6 @@ class ModelReplica:
 		self.params = params
 		self.currentParamsStep = step
 
-	def getParams(self, step):
-		assert self.currentParamsStep == step, "params are not up to date"
-		return self.params
-
 	def updateAccruedGradients(self, newGrad):
 		self.accruedGradients += newGrad
 
