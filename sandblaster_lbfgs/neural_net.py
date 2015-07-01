@@ -101,7 +101,7 @@ class NeuralNetwork:
             # back propagate the error
             acc_grad += self.backward_prop(y[i], a, weights)
       
-        return (1.0 / m) * acc_grad
+        return acc_grad / m
 
     def cost(self, weights_flattened, X, y):
 
@@ -116,7 +116,7 @@ class NeuralNetwork:
                 #cost_sum += (y[i]*np.log(h_x[0]) + (1- y[i])*np.log(1-h_x))
                 cost_sum += (h_x[k] - y[i][k])**2
 
-        return (1.0 / m * cost_sum)  
+        return cost_sum / m
 
     def fit(self, X, y, epochs=1):
 

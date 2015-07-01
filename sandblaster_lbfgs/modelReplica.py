@@ -1,11 +1,14 @@
 import numpy as np
+from neural_net import NeuralNetwork
 
 
 class ModelReplica:
 
-	def __init__(self, len_params):
+	def __init__(self, neuralNetLayers):
+		self.neuralNet = NeuralNetwork(neuralNetLayers)
 		self.currentParamsStep = None
-		self.accruedGradients = np.zeros(len_params)
+		self.accruedGradients = np.zeros(sum(self.neuralNet.sizes))
+		self.isAvailable = True
 
 	def hasParametersForStep(self, step):
 		return step == self.currentParamsStep
@@ -24,3 +27,6 @@ class ModelReplica:
 	def getLocalAccruedGrad(self):
 		return self.accruedGradients
 
+	def computeGradient(self, x, y):
+		gradients = self.neuralNet.jac(self.params, x, y)
+		return gradients

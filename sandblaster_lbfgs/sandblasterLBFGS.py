@@ -1,89 +1,133 @@
+import socket
+import sys
+import random
+import xmlrpclib
+import base64
 import numpy as np
-import paramServer as PS
 from modelReplica import ModelReplica
 from neural_net import NeuralNetwork
-import lbfgs
+from multiprocessing import Process, Queue, Lock
+import time
 
+dataLock = Lock()
+queue = Queue()
 
-
-def sliceData(data):
-	# This function assumes np.array as the type for data
-	# This function separates data into X (features) and Y (label) for the NN
-	x = data[:,:-1]
-	label_count = PS.get_label_count()
-	labels = data[:,-1] # We don't know how many we have due to minibatch size 
-	ys = []
-	for l in labels: # This sets up probabilities as outputs | 1 per output class
-		temp_y = [0 for i in range(label_count)]
-		temp_y[int(l)] = 1 # we can cast this because we know labels are ints and not a weird float
-		ys.append(temp_y)
-	y = ys
-	return x,y
-
-def computeGradient(nn, weights, data):
-	X, y = sliceData(data) 
-	gradients = nn.jac(weights, X, y)
-	return gradients
-
-def processPortion(modelReplica, step, nn):
+def processPortion(proxy, modelReplica, step):
+	"""
+	returns False when there isnt any portion to be processed,
+	else returns True
+	"""
 	if(not modelReplica.hasParametersForStep(step)):
-		params = PS.getParameters()
+		encoded_params = proxy.getParameters()
+		params = np.frombuffer(base64.decodestring(encoded_params), dtype=np.float64)
 		modelReplica.setParams(params, step)
-	else:
-		params = modelReplica.getParams(step)
-	data = PS.getDataPortion()
-	gradients = computeGradient(nn, params, data)
-	modelReplica.updateAccruedGradients(gradients)
 
+	#lock avoids more than one replica processing a same subset of data
+	dataLock.acquire()
+	if(not proxy.didFinishBatches()):
+		encoded_x, shape_x, encoded_y, shape_y = proxy.getDataPortion()
+		dataLock.release()
+	
+		x = np.frombuffer(base64.decodestring(encoded_x),dtype=np.float64).reshape(shape_x)
+		y = np.frombuffer(base64.decodestring(encoded_y),dtype=np.int).reshape(shape_y)
+
+		gradients = modelReplica.computeGradient(x, y)
+		modelReplica.updateAccruedGradients(gradients)
+		return True
+	else:
+		dataLock.release()
+		return False
+
+def runModelReplica(proxy, replica, step):
+	wasPortionProcessed =  processPortion(proxy, replica, step)
+	#lets start fixing timeToSendGradients always to True.
+	#WARNING!!!! it should be changed later
+	if(wasPortionProcessed):
+		localGrad = replica.getLocalAccruedGrad()
+		proxy.sendGradients(base64.b64encode(localGrad))
+		replica.accruedGradients[:] = 0
+
+	queue.put(replica)
+	return wasPortionProcessed
 
 
 
 if (__name__ == "__main__"):
-	maxHistory = 10 #max number of updates that should be held
-	feature_count = PS.get_feature_count()
-	label_count = PS.get_label_count()
-	layers = [feature_count, 10, label_count] # layers - 1 = hidden layers
-	
-	nn = NeuralNetwork(layers)
-	costFunction = nn.cost
-	jacFunction = nn.jac
-	step = 0
-	len_params = sum(nn.sizes)
-	PS.initializeParameters(nn.get_weights())
-	modelReplicas = [ModelReplica(len_params)]
+	HOST = socket.gethostbyname(socket.gethostname())
+	PARAM_SERVER,PORT = HOST,8000
+	   
+	proxy = xmlrpclib.ServerProxy("http://"+PARAM_SERVER+":"+str(PORT)+"/",allow_none=True)
 
+	proxy.resetParamServer()
 
-	X, y = sliceData(PS.getAllData())
-	old_fval = costFunction(PS.getParameters(), X, y)
+	neuralNetLayers = proxy.getNeuralNetLayers()
+	modelReplicas = [ModelReplica(neuralNetLayers), ModelReplica(neuralNetLayers), ModelReplica(neuralNetLayers), ModelReplica(neuralNetLayers)]
+
+	old_fval = None
 	old_old_fval = None
+	
+	step = 0
+	gtol = 1e-5
 
-	while(step < 100):
-		PS.initializeGradients(len_params)
+	queueLock = Lock()
+	for replica in modelReplicas:
+		queue.put(replica)
 
-		while(not PS.didFinishBatches()):
-			for mr in modelReplicas:
-				processPortion(mr, step, nn)
-				PS.sendGradients(mr.getLocalAccruedGrad())
-
-		history_S = PS.getHistory_S()
-		history_Y = PS.getHistory_Y()
-		rho = PS.getRho()
-		grad = PS.getAccruedGradients()
-		params = PS.getParameters()
+	startTime = time.time()
+	while(step < 500):
+		proxy.zeroOutGradients()
+		proxy.zeroOutBatchesProcessed()
 		
-		#allgrad = nn.jac(params, X, y)
+		processes = []
 
-		d_k = lbfgs.computeDirection(maxHistory, step, grad, history_S, history_Y, rho)
+		while(not proxy.didFinishBatches()):
+			
+			replica = queue.get()
+			#runModelReplica(proxy, replica, step)
+			process = Process(target=runModelReplica, args=(proxy, replica, step))
+			processes.append(process)
+			process.start()
 
-		alpha_k, old_fval, old_old_fval, gf_kp1 = lbfgs.lineSearch(costFunction, jacFunction, params, d_k, grad, old_fval, old_old_fval, args=(X,y))
+		for process in processes:
+			process.join()
 
-		if(alpha_k is None):
-			# Line search failed to find a better solution.
+		encoded_d_k = proxy.computeLBFGSDirection(step)
+		
+		alpha_k, old_fval, old_old_fval, encoded_gf_kp1 = \
+						proxy.lineSearch(encoded_d_k, old_fval, old_old_fval)
+
+		if(alpha_k is None): # Line search failed to find a better solution.
 			print "Stopped because line search did not converge"
 			break
 
-		PS.updateParameters(step, d_k, alpha_k, maxHistory, gf_kp1)
+		proxy.updateParameters(step, encoded_d_k, alpha_k, encoded_gf_kp1)
+
+		encoded_grads = proxy.getAccruedGradients()
+		accruedGradients = np.frombuffer(base64.decodestring(encoded_grads), dtype=np.float64)
+		if(np.linalg.norm(accruedGradients, np.inf) < gtol):
+			print "converged!!"
+			break
 
 		step += 1
+
 	print step
-	print costFunction(PS.getParameters(), X, y)
+	print 'process time:', time.time() - startTime
+
+	encoded_x, shape_x, encoded_y, shape_y = proxy.getAllData()
+	X = np.frombuffer(base64.decodestring(encoded_x),dtype=np.float64).reshape(shape_x)
+	y = np.frombuffer(base64.decodestring(encoded_y),dtype=np.int).reshape(shape_y)
+
+	nn = NeuralNetwork(neuralNetLayers)
+	encoded_params = proxy.getParameters()
+	params = np.frombuffer(base64.decodestring(encoded_params), dtype=np.float64)
+	print nn.cost(params, X, y)
+
+	nn.set_weights(params)
+	correct = 0
+	for i, e in enumerate(X):
+		#print(e,nn.predict(e))
+		prediction = list(nn.predict(e))
+		#print "Label: ",y[i]," | Predictions: ",prediction
+		if prediction.index(max(prediction)) == np.argmax(y[i]):
+			correct += 1
+	print "Correct: ",correct,"/",i,"(",float(correct)/float(i),"%)"
