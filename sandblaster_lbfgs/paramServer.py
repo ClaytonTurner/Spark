@@ -6,6 +6,7 @@ import base64
 import numpy as np
 import lbfgs
 from neural_net import NeuralNetwork
+from scipy.optimize.linesearch import line_search_armijo
 
 def sliceData(data):
 	# This function assumes np.array as the type for data
@@ -37,6 +38,8 @@ jacFunction = nn.jac 	 					#
 
 params = nn.get_weights() #weights
 accruedGradients = np.zeros(sum(nn.sizes))
+old_gradients = None
+old_params = None
 maxHistory = 10
 history_S = [] #s_k = x_kp1 - x_k
 history_Y = [] #y_k = gf_kp1 - gf_k
@@ -52,6 +55,7 @@ def processedBatches():
 def resetParamServer():
 	global params, accruedGradients, history_S, history_Y, rho,batches_processed
 	
+	nn = NeuralNetwork(NNlayers)
 	params = nn.get_weights()
 	accruedGradients = np.zeros(sum(nn.sizes))
 	history_S = []
@@ -97,8 +101,8 @@ def getDataPortion():
 	batches_processed += 1
 	return base64.b64encode(minibatch_x.tostring()), shape_x, base64.b64encode(minibatch_y.tostring()), shape_y
 
-def getAccruedGradients():
-	return base64.b64encode(accruedGradients)
+def getAccruedGradientsNorm():
+	return float(np.linalg.norm(accruedGradients, np.inf))
 
 def getParameters():
 	return base64.b64encode(params)
@@ -108,49 +112,64 @@ def sendGradients(encodedLocalGrad):
 	global accruedGradients
 	localGrad = np.frombuffer(base64.decodestring(encodedLocalGrad),dtype=np.float64)
 	batches_number = dataSetSize / batch_size
-	#Dividing the gradients by the number of batches is needed to normalize those values
+	#Divide the gradient by the number of batches to normalize it
 	accruedGradients += (localGrad / batches_number)
 
 def computeLBFGSDirection(step):
+	updateHistory(step)
 	d_k = lbfgs.computeDirection(maxHistory, step, accruedGradients, history_S, history_Y, rho)
 	return base64.b64encode(d_k)
 
-def lineSearch(encoded_d_k, fval_x_k, fval_x_km1):
+def updateHistory(step):
+	global history_S, history_Y, rho
+
+	if(step > 0):
+		if(step > maxHistory):
+			history_S.pop(0)
+			history_Y.pop(0)
+			rho.pop(0)
+
+		#save new pair
+		s_k = params - old_params
+		history_S.append(s_k)
+		y_k = accruedGradients - old_gradients
+		history_Y.append(y_k)
+		try:
+			dem = float(np.dot(s_k, y_k))
+			rhok = 1.0 / dem
+		except ZeroDivisionError:
+			rhok = 1000.0
+			print("Divide-by-zero encountered: rhok assumed large")
+		if np.isinf(rhok):
+			rhok = 1000.0
+		rho.append(rhok)
+
+def lineSearch(encoded_d_k, fval_x_k):
 	"""
 	returns:
 		alpha_k: float or None
 			alpha for which x_kp1 = x_k + alpha * d_k, or None if line search algorithm did not converge.
 		new_fval : float or None
 			New function value f(x_kp1), or None if the line search algorithm did not converge.
-		old_fval : float
-			Old function value f(fval_x_k).
-		gf_kp1 : float or None
-			myfprime(x_kp1), or None if the line search algorithm did not converge.
 	"""
 	d_k = np.frombuffer(base64.decodestring(encoded_d_k),dtype=np.float64)
-	alpha_k, new_fval, old_fval, gf_kp1 = lbfgs.lineSearch(costFunction, jacFunction, params, d_k, accruedGradients, fval_x_k, fval_x_km1, args=(X,y))
-	return (alpha_k, new_fval, float(old_fval), base64.b64encode(gf_kp1))
+	alpha_k, fc, new_fval = \
+			line_search_armijo(costFunction, params, d_k, accruedGradients, fval_x_k, args=(X,y), c1=1e-5)
+	#cast to float because line_search_armijo returns type numpy float
+	alpha_k = float(alpha_k) if alpha_k is not None else None 
+	new_fval = float(new_fval) if new_fval is not None else None 
+	
+	return (alpha_k, new_fval)
 
-def updateParameters(step, encoded_d_k, alpha_k, encoded_gf_kp1):
-	global params, history_S, history_Y, rho
+def updateParameters(step, encoded_d_k, alpha_k):
+	global params, old_params, old_gradients
 
 	d_k = np.frombuffer(base64.decodestring(encoded_d_k),dtype=np.float64)
-	gf_kp1 = np.frombuffer(base64.decodestring(encoded_gf_kp1),dtype=np.float64)
-	newParams = params + alpha_k * d_k  #x_kp1 = x_k + alpha_K * d_k
 
-	if(step > maxHistory):
-		history_S.pop(0)
-		history_Y.pop(0)
-		rho.pop(0)
+	old_gradients = np.copy(accruedGradients)
+	old_params = np.copy(params)
+	params += alpha_k * d_k  #x_kp1 = x_k + alpha_K * d_k
 
-	#save new pair
-	s_k = newParams - params
-	history_S.append(s_k)
-	y_k = gf_kp1 - accruedGradients
-	history_Y.append(y_k)
-	rho.append(1.0 / (np.dot(s_k, y_k)))
-
-	params = newParams #update the weights
 
 if __name__ == "__main__":
 	HOST = socket.gethostbyname(socket.gethostname())
@@ -167,7 +186,7 @@ if __name__ == "__main__":
 	server.register_function(getAllData)
 	server.register_function(getDataPortion)
 	server.register_function(sendGradients)
-	server.register_function(getAccruedGradients)
+	server.register_function(getAccruedGradientsNorm)
 	server.register_function(getParameters)
 	server.register_function(computeLBFGSDirection)
 	server.register_function(lineSearch)

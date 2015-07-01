@@ -56,15 +56,14 @@ if (__name__ == "__main__"):
 	HOST = socket.gethostbyname(socket.gethostname())
 	PARAM_SERVER,PORT = HOST,8000
 	   
-	proxy = xmlrpclib.ServerProxy("http://"+PARAM_SERVER+":"+str(PORT)+"/",allow_none=True)
+	proxy = xmlrpclib.ServerProxy("http://"+PARAM_SERVER+":"+str(PORT)+"/", allow_none=True)
 
 	proxy.resetParamServer()
 
 	neuralNetLayers = proxy.getNeuralNetLayers()
 	modelReplicas = [ModelReplica(neuralNetLayers), ModelReplica(neuralNetLayers), ModelReplica(neuralNetLayers), ModelReplica(neuralNetLayers)]
 
-	old_fval = None
-	old_old_fval = None
+	fval_x_k = None
 	
 	step = 0
 	gtol = 1e-5
@@ -93,18 +92,16 @@ if (__name__ == "__main__"):
 
 		encoded_d_k = proxy.computeLBFGSDirection(step)
 		
-		alpha_k, old_fval, old_old_fval, encoded_gf_kp1 = \
-						proxy.lineSearch(encoded_d_k, old_fval, old_old_fval)
+		alpha_k, fval_x_k = proxy.lineSearch(encoded_d_k, fval_x_k)
 
 		if(alpha_k is None): # Line search failed to find a better solution.
-			print "Stopped because line search did not converge"
-			break
+			print "Line search did not converge. Set alpha_k = 0"
+			alpha_k = 0
 
-		proxy.updateParameters(step, encoded_d_k, alpha_k, encoded_gf_kp1)
+		proxy.updateParameters(step, encoded_d_k, alpha_k)
+		#time.sleep(100000)
 
-		encoded_grads = proxy.getAccruedGradients()
-		accruedGradients = np.frombuffer(base64.decodestring(encoded_grads), dtype=np.float64)
-		if(np.linalg.norm(accruedGradients, np.inf) < gtol):
+		if(proxy.getAccruedGradientsNorm() < gtol):
 			print "converged!!"
 			break
 
