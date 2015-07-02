@@ -1,99 +1,159 @@
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
-Line search did not converge. Set alpha_k = 0
+Step: 7 Line search did not converge. Set alpha_k = 0
 converged!!
-484
-process time: 64.921339035
-1.99870868761
-Correct:  51 / 149 ( 0.342281879195 %)
-
-500
-process time: 70.3963871002
-0.0262631186368
+376
+process time: 50.5242950916
+0.0197108996056
 Correct:  148 / 149 ( 0.993288590604 %)
 
-Step: 4 Line search did not converge. Set alpha_k = 0
+converged!!
+297
+process time: 42.8848190308
+0.0256410414217
+Correct:  148 / 149 ( 0.993288590604 %)
+
+Step: 3 Line search did not converge. Set alpha_k = 0
+Step: 44 Line search did not converge. Set alpha_k = 0
+converged!!
+383
+process time: 53.2798609734
+0.0130718967084
+Correct:  149 / 149 ( 1.0 %)
+
+converged!!
+294
+process time: 41.1744310856
+0.0261946933909
+Correct:  148 / 149 ( 0.993288590604 %)
+
+Step: 12 Line search did not converge. Set alpha_k = 0
+Step: 127 Line search did not converge. Set alpha_k = 0
+Step: 132 Line search did not converge. Set alpha_k = 0
+Step: 136 Line search did not converge. Set alpha_k = 0
+Step: 172 Line search did not converge. Set alpha_k = 0
+Step: 206 Line search did not converge. Set alpha_k = 0
+Step: 222 Line search did not converge. Set alpha_k = 0
+Step: 281 Line search did not converge. Set alpha_k = 0
+converged!!
+408
+process time: 57.9501419067
+0.0256460696588
+Correct:  148 / 149 ( 0.993288590604 %)
+
+Step: 2 Line search did not converge. Set alpha_k = 0
+500
+process time: 70.1882109642
+0.362189491292
+Correct:  97 / 149 ( 0.651006711409 %)
+
+Step: 6 Line search did not converge. Set alpha_k = 0
+Step: 257 Line search did not converge. Set alpha_k = 0
+converged!!
+294
+process time: 39.8609220982
+0.013202725521
+Correct:  149 / 149 ( 1.0 %)
+
+500
+process time: 70.7481148243
+0.0133061993174
+Correct:  149 / 149 ( 1.0 %)
+
 Step: 8 Line search did not converge. Set alpha_k = 0
-Step: 100 Line search did not converge. Set alpha_k = 0
-Step: 109 Line search did not converge. Set alpha_k = 0
-Step: 118 Line search did not converge. Set alpha_k = 0
-500
-process time: 69.98970294
-0.103224340979
-Correct:  146 / 149 ( 0.979865771812 %)
-
-500
-process time: 68.6798319817
-0.0132025417435
+Step: 15 Line search did not converge. Set alpha_k = 0
+converged!!
+274
+process time: 38.4311771393
+0.0198690218766
 Correct:  149 / 149 ( 1.0 %)
 
-Step: 33 Line search did not converge. Set alpha_k = 0
-500
-process time: 65.6907670498
-0.013202614393
+Step: 6 Line search did not converge. Set alpha_k = 0
+Step: 9 Line search did not converge. Set alpha_k = 0
+converged!!
+295
+process time: 40.666435957
+0.0130718954337
 Correct:  149 / 149 ( 1.0 %)
 
-500
-process time: 61.5554358959
-0.0262660079462
-Correct:  148 / 149 ( 0.993288590604 %)
-Step: 1 Line search did not converge. Set alpha_k = 0
-Step: 4 Line search did not converge. Set alpha_k = 0
-Step: 8 Line search did not converge. Set alpha_k = 0
-500
-process time: 68.6731109619
-0.0231120896396
+Step: 98 Line search did not converge. Set alpha_k = 0
+converged!!
+417
+process time: 56.759510994
+0.673202618928
 Correct:  148 / 149 ( 0.993288590604 %)
 
-Step: 5 Line search did not converge. Set alpha_k = 0
-Step: 23 Line search did not converge. Set alpha_k = 0
-Step: 49 Line search did not converge. Set alpha_k = 0
-Step: 54 Line search did not converge. Set alpha_k = 0
-Step: 58 Line search did not converge. Set alpha_k = 0
-Step: 63 Line search did not converge. Set alpha_k = 0
-Step: 68 Line search did not converge. Set alpha_k = 0
-Step: 72 Line search did not converge. Set alpha_k = 0
-Step: 76 Line search did not converge. Set alpha_k = 0
-Step: 80 Line search did not converge. Set alpha_k = 0
-Step: 100 Line search did not converge. Set alpha_k = 0
-Step: 105 Line search did not converge. Set alpha_k = 0
-Step: 109 Line search did not converge. Set alpha_k = 0
-Step: 214 Line search did not converge. Set alpha_k = 0
-Step: 217 Line search did not converge. Set alpha_k = 0
-Step: 384 Line search did not converge. Set alpha_k = 0
-500
-process time: 73.6983430386
-0.0130840449406
-Correct:  149 / 149 ( 1.0 %)
+converged!!
+165
+process time: 22.1483170986
+0.026266735264
+Correct:  148 / 149 ( 0.993288590604 %)
 
-Step: 254 Line search did not converge. Set alpha_k = 0
-500
-process time: 67.5479638577
-0.0387928588537
+Step: 37 Line search did not converge. Set alpha_k = 0
+Step: 70 Line search did not converge. Set alpha_k = 0
+converged!!
+339
+process time: 45.3248639107
+0.026133389396
+Correct:  148 / 149 ( 0.993288590604 %)
+
+converged!!
+236
+process time: 31.9943299294
+0.0262665003373
+Correct:  148 / 149 ( 0.993288590604 %)
+
+converged!!
+183
+process time: 25.4829349518
+0.02653676943
 Correct:  147 / 149 ( 0.986577181208 %)
 
-Step: 5 Line search did not converge. Set alpha_k = 0
-Step: 8 Line search did not converge. Set alpha_k = 0
-Step: 288 Line search did not converge. Set alpha_k = 0
-Step: 289 Line search did not converge. Set alpha_k = 0
-Step: 290 Line search did not converge. Set alpha_k = 0
-Step: 291 Line search did not converge. Set alpha_k = 0
-Step: 292 Line search did not converge. Set alpha_k = 0
-500
-process time: 69.705988884
-0.0130718954248
+converged!!
+285
+process time: 39.3961520195
+0.0256412652826
+Correct:  148 / 149 ( 0.993288590604 %)
+
+Step: 21 Line search did not converge. Set alpha_k = 0
+Step: 51 Line search did not converge. Set alpha_k = 0
+Step: 58 Line search did not converge. Set alpha_k = 0
+Step: 61 Line search did not converge. Set alpha_k = 0
+converged!!
+387
+process time: 51.6721057892
+0.0130718960896
 Correct:  149 / 149 ( 1.0 %)
 
+converged!!
+94
+process time: 13.3588531017
+0.333333328675
+Correct:  100 / 149 ( 0.671140939597 %)
+
+Step: 44 Line search did not converge. Set alpha_k = 0
+Step: 45 Line search did not converge. Set alpha_k = 0
+Step: 93 Line search did not converge. Set alpha_k = 0
+Step: 201 Line search did not converge. Set alpha_k = 0
+Step: 207 Line search did not converge. Set alpha_k = 0
+Step: 245 Line search did not converge. Set alpha_k = 0
+converged!!
+345
+process time: 46.2013781071
+0.0265333453868
+Correct:  147 / 149 ( 0.986577181208 %)
+
+Step: 6 Line search did not converge. Set alpha_k = 0
+Step: 11 Line search did not converge. Set alpha_k = 0
+Step: 14 Line search did not converge. Set alpha_k = 0
+Step: 17 Line search did not converge. Set alpha_k = 0
+Step: 21 Line search did not converge. Set alpha_k = 0
+Step: 46 Line search did not converge. Set alpha_k = 0
+Step: 52 Line search did not converge. Set alpha_k = 0
+Step: 100 Line search did not converge. Set alpha_k = 0
+Step: 135 Line search did not converge. Set alpha_k = 0
+Step: 482 Line search did not converge. Set alpha_k = 0
+Step: 485 Line search did not converge. Set alpha_k = 0
 500
-process time: 67.0104939938
-0.0130718954248
-Correct:  149 / 149 ( 1.0 %)
+process time: 70.1952769756
+0.021476513012
+Correct:  148 / 149 ( 0.993288590604 %)
+
