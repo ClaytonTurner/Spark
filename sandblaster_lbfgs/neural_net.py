@@ -53,7 +53,7 @@ class NeuralNetwork:
             i += j # record the flattened array index for the end of current layer
         return params
 
-    def forward_prop(self, x_, weights):
+    def feed_forward(self, x_, weights):
 
         # iterate through each layer in the network computing and forward propagating activation values
         x = np.hstack((1, x_)) # add bias unit with value 1.0
@@ -96,7 +96,7 @@ class NeuralNetwork:
         # iterate through instances and accumulate deltas
         for i, x in enumerate(X):
             # calculate the activation values
-            a, h_x = self.forward_prop(x, weights)
+            a, h_x = self.feed_forward(x, weights)
 
             # back propagate the error
             acc_grad += self.backward_prop(y[i], a, weights)
@@ -111,7 +111,7 @@ class NeuralNetwork:
         # compute the sum of the error
         cost_sum = 0
         for i, x in enumerate(X):
-            a, h_x = self.forward_prop(x, weights)
+            a, h_x = self.feed_forward(x, weights)
             for k in range(len(h_x)):
                 #cost_sum += (y[i]*np.log(h_x[0]) + (1- y[i])*np.log(1-h_x))
                 cost_sum += (h_x[k] - y[i][k])**2
@@ -129,7 +129,7 @@ class NeuralNetwork:
 
     def predict(self, x):
         weights = self.unpack_parameters(self.weights)
-        a, h_x = self.forward_prop(x, weights)
+        a, h_x = self.feed_forward(x, weights)
         return h_x
 
 

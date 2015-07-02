@@ -109,7 +109,7 @@ if (__name__ == "__main__"):
 
 		step += 1
 
-	print step
+	print 'steps', step
 	print 'process time:', time.time() - startTime
 
 	encoded_x, shape_x, encoded_y, shape_y = proxy.getAllData()
@@ -119,7 +119,7 @@ if (__name__ == "__main__"):
 	nn = NeuralNetwork(neuralNetLayers)
 	encoded_params = proxy.getParameters()
 	params = np.frombuffer(base64.decodestring(encoded_params), dtype=np.float64)
-	print nn.cost(params, X, y)
+	print 'Function cost:', nn.cost(params, X, y)
 
 	nn.set_weights(params)
 	correct = 0
