@@ -41,6 +41,10 @@ class DistBelief:
             self.activation = tanh
             self.activation_prime = tanh_prime
 
+	###################
+	# Parallelization #
+	###################
+
 	self.machines = machines # This is for representing the model parallelism
 				 #	within DistBelief
 				 # We will assume even numbers only
@@ -49,8 +53,10 @@ class DistBelief:
 	machine_nodes = [[] for i in range(sum(machines))] #list of lists. each top level list represents a machine
 			   # each sublist represents nodes at that layer
 
+	##############################################
+	# Set up the parallelization nodes for the y #
+	##############################################
 	y_flat_used = [False for x in layers]
-	# Set up the parallelization nodes for the y
 	y_section = []
 	for i in range(machines_y):
 		y_section.append(layers[i*len(layers)/machines_y:(i+1)*len(layers)/machines_y])
@@ -64,43 +70,42 @@ class DistBelief:
 				index_found = y_flat.index(mach)
 				while(y_flat_used[index_found] == True):
 					# Let's find the next occurrence then
-					#print "index_found",index_found
 					index_found = y_flat[index_found+1:].index(mach) + index_found
-					#print "y_flat",y_flat
-					#print "y_flat_used",y_flat_used
 				y_flat_used[index_found] = True
-				#start = y_flat.index(index_found)
 				start = index_found
 			if i == len(y) - 1:
 				end = y_flat.index(mach)
 				while(y_flat_used[end] == True):
 					end = y_flat[end+1:].index(mach) + end
-			#print i
-			#print "start",start
-			#print "end",end
 			i += 1
 		temp_rep = []
+		print "y:",y
 		for i in range(len(y_flat)):
 			if i >= start and i <= end:
 				temp_rep.append(y_flat[i])
 			else:
 				temp_rep.append(0)
 		new_rep.append(temp_rep)
-	# Set up the parallelization nodes for the x
+	
+	##############################################
+	# Set up the parallelization nodes for the x #
+	##############################################
 	print "layers:",layers
 	final_rep = []
 	for mach in new_rep:
 		for i in range(machines_x):
 			final_rep.append([x/machines_x for x in mach])
+	print final_rep 
+	############################
+	# Parallelization complete #
+	############################
 
-	print final_rep
         # Set weights
         self.weights = []
-        # layers = [2,2,1]
         # range of weight values (-1,1)
         # input and hidden layers - random((2+1, 2+1)) : 3 x 3
         for i in range(1, len(layers) - 1):
-            r = 2*np.random.random((layers[i-1] + 1, layers[i] + 1)) -1
+            r = 2*np.random.random((layers[i-1] + 1, layers[i] + 1)) - 1
 	    #n = Node(r, , )
             self.weights.append(r)#n)
         # output layer - random((2+1, 1)) : 3 x 1
