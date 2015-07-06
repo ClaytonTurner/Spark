@@ -66,7 +66,7 @@ if (__name__ == "__main__"):
 	fval_x_k = None
 	
 	step = 0
-	gtol = 1e-10
+	gtol = 1e-5
 
 	queueLock = Lock()
 	for replica in modelReplicas:
@@ -94,20 +94,22 @@ if (__name__ == "__main__"):
 		
 		alpha_k, fval_x_k = proxy.lineSearch(encoded_d_k, fval_x_k)
 
+		testConvergence = alpha_k is not None
 		if(alpha_k is None): # Line search failed to find a better solution.
-			print 'Step:', step, "Line search did not converge. Set alpha_k = 0"
-			alpha_k = 0
+			print 'Step:', step, "Line search did not converge. Set alpha_k for a small value"
+			#since line search did not converge, it takes a small step in the min direction
+			alpha_k = 0.01
 
 		proxy.updateParameters(step, encoded_d_k, alpha_k)
-		#time.sleep(100000)
 
-		if(proxy.getAccruedGradientsNorm() < gtol):
+		#check if an alpha was found, before check the accrued gradients' norm
+		if(testConvergence and proxy.getAccruedGradientsNorm() < gtol):
 			print "converged!!"
 			break
 
 		step += 1
 
-	print step
+	print 'steps', step
 	print 'process time:', time.time() - startTime
 
 	encoded_x, shape_x, encoded_y, shape_y = proxy.getAllData()
@@ -117,7 +119,7 @@ if (__name__ == "__main__"):
 	nn = NeuralNetwork(neuralNetLayers)
 	encoded_params = proxy.getParameters()
 	params = np.frombuffer(base64.decodestring(encoded_params), dtype=np.float64)
-	print nn.cost(params, X, y)
+	print 'Function cost:', nn.cost(params, X, y)
 
 	nn.set_weights(params)
 	correct = 0

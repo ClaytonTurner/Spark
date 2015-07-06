@@ -1,0 +1,66 @@
+converged!!
+steps 218
+process time: 28.9563891888
+Function cost: 0.026154478716
+Correct:  148 / 149 ( 0.993288590604 %)
+
+steps 500
+process time: 65.3353800774
+Function cost: 0.0132364739302
+Correct:  149 / 149 ( 1.0 %)
+
+Step: 21 Line search did not converge. Set alpha_k for a small value
+Step: 49 Line search did not converge. Set alpha_k for a small value
+converged!!
+steps 231
+process time: 32.3196020126
+Function cost: 0.0377381228051
+Correct:  147 / 149 ( 0.986577181208 %)
+
+Step: 6 Line search did not converge. Set alpha_k for a small value
+Step: 8 Line search did not converge. Set alpha_k for a small value
+Step: 11 Line search did not converge. Set alpha_k for a small value
+steps 500
+process time: 65.8205800056
+Function cost: 0.0849574398329
+Correct:  148 / 149 ( 0.993288590604 %)
+
+Step: 168 Line search did not converge. Set alpha_k for a small value
+steps 500
+process time: 64.4973659515
+Function cost: 0.0300795018661
+Correct:  148 / 149 ( 0.993288590604 %)
+
+Step: 499 Line search did not converge. Set alpha_k for a small value
+steps 500
+process time: 66.8908910751
+Function cost: 0.0129839500358
+Correct:  149 / 149 ( 1.0 %)
+
+Step: 2 Line search did not converge. Set alpha_k for a small value
+converged!!
+steps 150
+process time: 19.8958230019
+Function cost: 0.0198666697219
+Correct:  148 / 149 ( 0.993288590604 %)
+
+Step: 23 Line search did not converge. Set alpha_k for a small value
+Step: 234 Line search did not converge. Set alpha_k for a small value
+converged!!
+steps 265
+process time: 35.4583909512
+Function cost: 0.0132026150144
+Correct:  149 / 149 ( 1.0 %)
+
+converged!!
+steps 206
+process time: 27.3766269684
+Function cost: 0.0256410553432
+Correct:  148 / 149 ( 0.993288590604 %)
+
+converged!!
+steps 289
+process time: 37.105907917
+Function cost: 0.0132026361088
+Correct:  149 / 149 ( 1.0 %)
+
