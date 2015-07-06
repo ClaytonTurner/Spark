@@ -5,6 +5,7 @@ This is a python implementation of Distbelief built on top of
 '''
 
 import numpy as np
+from copy import deepcopy
 
 def sigmoid(x):
     return 1.0/(1.0 + np.exp(-x))
@@ -47,6 +48,8 @@ class DistBelief:
 	machines_x,machines_y = machines
 	machine_nodes = [[] for i in range(sum(machines))] #list of lists. each top level list represents a machine
 			   # each sublist represents nodes at that layer
+
+	y_flat_used = [False for x in layers]
 	# Set up the parallelization nodes for the y
 	y_section = []
 	for i in range(machines_y):
@@ -56,12 +59,25 @@ class DistBelief:
 	for y in y_section:
 		i = 0
 		for mach in y:
+			print "mach:",mach
 			if i == 0:
-				start = y_flat.index(mach)
-			end = y_flat.index(mach)
-			print i
-			print "start",start
-			print "end",end
+				index_found = y_flat.index(mach)
+				while(y_flat_used[index_found] == True):
+					# Let's find the next occurrence then
+					#print "index_found",index_found
+					index_found = y_flat[index_found+1:].index(mach) + index_found
+					#print "y_flat",y_flat
+					#print "y_flat_used",y_flat_used
+				y_flat_used[index_found] = True
+				#start = y_flat.index(index_found)
+				start = index_found
+			if i == len(y) - 1:
+				end = y_flat.index(mach)
+				while(y_flat_used[end] == True):
+					end = y_flat[end+1:].index(mach) + end
+			#print i
+			#print "start",start
+			#print "end",end
 			i += 1
 		temp_rep = []
 		for i in range(len(y_flat)):
@@ -71,11 +87,13 @@ class DistBelief:
 				temp_rep.append(0)
 		new_rep.append(temp_rep)
 	# Set up the parallelization nodes for the x
+	print "layers:",layers
 	final_rep = []
 	for mach in new_rep:
 		for i in range(machines_x):
-			final_rep.append(x/machines_x for x in mach])
+			final_rep.append([x/machines_x for x in mach])
 
+	print final_rep
         # Set weights
         self.weights = []
         # layers = [2,2,1]
@@ -83,11 +101,12 @@ class DistBelief:
         # input and hidden layers - random((2+1, 2+1)) : 3 x 3
         for i in range(1, len(layers) - 1):
             r = 2*np.random.random((layers[i-1] + 1, layers[i] + 1)) -1
-	    n = Node(r, , )
-            self.weights.append(n)
+	    #n = Node(r, , )
+            self.weights.append(r)#n)
         # output layer - random((2+1, 1)) : 3 x 1
         r = 2*np.random.random( (layers[i] + 1, layers[i+1])) - 1
         self.weights.append(r)
+	print "self.weights:",self.weights
 
     def set_weights(self,params):
 	self.weights = params
@@ -147,7 +166,8 @@ if __name__ == '__main__':
     print "This is a test of the neural net on the XOR problem\n"
 
     #nn = NeuralNetwork([2,2,1])
-    nn = NeuralNetwork([2,2,2])
+    layers = [2,8,6,4,2] # [input, hidden layers..., output layer]
+    nn = DistBelief(layers)
     X = np.array([[0, 0],
                   [0, 1],
                   [1, 0],
