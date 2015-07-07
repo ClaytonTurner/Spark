@@ -62,10 +62,11 @@ class DistBelief:
 		y_section.append(layers[i*len(layers)/machines_y:(i+1)*len(layers)/machines_y])
 	y_flat = [item for sublist in y_section for item in sublist]
 	new_rep = []
+	print "y_section",y_section
+	first_y = True
 	for y in y_section:
 		i = 0
-		for mach in y:
-			print "mach:",mach
+		for mach in y: # Could be fixed by listifying like [-1,1] but not terrible as is
 			if i == 0:
 				index_found = y_flat.index(mach)
 				while(y_flat_used[index_found] == True):
@@ -73,19 +74,22 @@ class DistBelief:
 					index_found = y_flat[index_found+1:].index(mach) + index_found
 				y_flat_used[index_found] = True
 				start = index_found
+				if not first_y and len(layers) % machines_y == 0:
+					start += 1
 			if i == len(y) - 1:
 				end = y_flat.index(mach)
 				while(y_flat_used[end] == True):
-					end = y_flat[end+1:].index(mach) + end
+					end = y_flat[end+1:].index(mach) + end + 1
+			#y_flat_used[i] = True
 			i += 1
 		temp_rep = []
-		print "y:",y
 		for i in range(len(y_flat)):
 			if i >= start and i <= end:
 				temp_rep.append(y_flat[i])
 			else:
 				temp_rep.append(0)
 		new_rep.append(temp_rep)
+		first_y = False
 	
 	##############################################
 	# Set up the parallelization nodes for the x #
@@ -93,8 +97,19 @@ class DistBelief:
 	print "layers:",layers
 	final_rep = []
 	for mach in new_rep:
+		odd_added = False
 		for i in range(machines_x):
-			final_rep.append([x/machines_x for x in mach])
+			#final_rep.append([x/machines_x for x in mach])
+			temp_final_rep = []
+			for j in range(len(mach)):
+				x = mach[j]
+				if x % machines_x == 0 or odd_added: # if the amount of nodes is even relative to machines_x
+					temp_final_rep.append(x/machines_x)
+				else: # amount of nodes is odd
+					temp_final_rep.append(x/machines_x + x%machines_x)
+					odd_added = True
+			final_rep.append(temp_final_rep)
+
 	print final_rep 
 	############################
 	# Parallelization complete #
@@ -103,7 +118,7 @@ class DistBelief:
         # Set weights
         self.weights = []
         # range of weight values (-1,1)
-        # input and hidden layers - random((2+1, 2+1)) : 3 x 3
+        # input and hidden layers
         for i in range(1, len(layers) - 1):
             r = 2*np.random.random((layers[i-1] + 1, layers[i] + 1)) - 1
 	    #n = Node(r, , )
@@ -111,7 +126,6 @@ class DistBelief:
         # output layer - random((2+1, 1)) : 3 x 1
         r = 2*np.random.random( (layers[i] + 1, layers[i+1])) - 1
         self.weights.append(r)
-	print "self.weights:",self.weights
 
     def set_weights(self,params):
 	self.weights = params
@@ -168,10 +182,11 @@ class DistBelief:
 
 if __name__ == '__main__':
 
-    print "This is a test of the neural net on the XOR problem\n"
+    print "This is a test of distbelief as a local NN on the XOR problem"
 
-    #nn = NeuralNetwork([2,2,1])
-    layers = [2,8,6,4,2] # [input, hidden layers..., output layer]
+    #layers = [2,8,6,4,2] # [input, hidden layers..., output layer]
+    #layers = [2,4,4,2]
+    layers = [2,3,3,2]
     nn = DistBelief(layers)
     X = np.array([[0, 0],
                   [0, 1],
