@@ -83,8 +83,9 @@ class DistBelief:
 					
 				y_flat_used[index_found] = True
 				start = index_found
-				if not first_y and len(layers) % machines_y == 0:
-					start += 1
+				# Initially this was needed but doesn't seem to be now
+				#if not first_y and len(layers) % machines_y == 0: # Something here
+				#	start += 1-1
 			if i == len(y) - 1:
 				end = y_flat.index(mach)
 				while(y_flat_used[end] == True):
@@ -196,10 +197,10 @@ if __name__ == '__main__':
 
     print "This is a test of distbelief as a local NN on the XOR problem"
 
-    #layers = [2,8,6,4,2] # [input, hidden layers..., output layer]
+    layers = [2,8,6,4,2] # [input, hidden layers..., output layer]
     #layers = [2,4,4,2]
     #layers = [2,3,3,2]
-    layers = [2,4,4,4,4,4,4,2]
+    #layers = [2,4,4,4,4,4,4,2]
     nn = DistBelief(layers)
     X = np.array([[0, 0],
                   [0, 1],
