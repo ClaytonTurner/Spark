@@ -69,9 +69,18 @@ class DistBelief:
 		for mach in y: # Could be fixed by listifying like [-1,1] but not terrible as is
 			if i == 0:
 				index_found = y_flat.index(mach)
+				prev_index_found = -8 # just an index we know won't get used
+				increaser = 1
 				while(y_flat_used[index_found] == True):
 					# Let's find the next occurrence then
 					index_found = y_flat[index_found+1:].index(mach) + index_found
+					if index_found == prev_index_found and prev_index_found == increaser:
+						index_found += 1
+						increaser += 1
+					prev_index_found = index_found
+					print "y_flat...:",y_flat[index_found+1:]
+					print "index_found",index_found
+					
 				y_flat_used[index_found] = True
 				start = index_found
 				if not first_y and len(layers) % machines_y == 0:
@@ -80,10 +89,13 @@ class DistBelief:
 				end = y_flat.index(mach)
 				while(y_flat_used[end] == True):
 					end = y_flat[end+1:].index(mach) + end + 1
-			#y_flat_used[i] = True
+					print "end:",end
+			y_flat_used[i] = True
+			print "y_flat_used",y_flat_used
 			i += 1
 		temp_rep = []
 		for i in range(len(y_flat)):
+			print "start:",start,"end:",end
 			if i >= start and i <= end:
 				temp_rep.append(y_flat[i])
 			else:
@@ -186,7 +198,8 @@ if __name__ == '__main__':
 
     #layers = [2,8,6,4,2] # [input, hidden layers..., output layer]
     #layers = [2,4,4,2]
-    layers = [2,3,3,2]
+    #layers = [2,3,3,2]
+    layers = [2,4,4,4,4,4,4,2]
     nn = DistBelief(layers)
     X = np.array([[0, 0],
                   [0, 1],
