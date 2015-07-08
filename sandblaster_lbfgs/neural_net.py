@@ -14,7 +14,6 @@ class NeuralNetwork:
         self.activation = tanh
         self.activation_prime = tanh_prime
         self.numberOfLayers = len(layers)
-        # compute weight layer sizes and shapes
         self.sizes = [] # store weight layer divisions in the flattened weight array
         self.shapes = [] # store weight layer shapes for reshaping
         
@@ -52,11 +51,10 @@ class NeuralNetwork:
             i += j # record the flattened array index for the end of current layer
         return params
 
-    def feed_forward(self, x_, weights):
+    def feed_forward(self, x, weights):
 
         # iterate through each layer in the network computing and forward propagating activation values
-        a = [x_] # stores output values for each layer
-
+        a = [x]
         for i in range(self.numberOfLayers - 1):
             inputs = np.hstack((1, a[i])) #add the biases node
             a_ = self.activation(np.dot(inputs, weights[i]))
@@ -121,7 +119,6 @@ class NeuralNetwork:
 
         for k in range(epochs):
             self.weights = lbfgs.fmin_LBFGS(self.cost, self.weights, self.jac, args=(X,y))
-
             #for computing using sdg algorithm (also set epochs to a large number):
                 #gradients = self.jac(self.weights, X, y)
                 #self.weights -= 0.2 * gradients
@@ -175,8 +172,8 @@ def trainIrisDataset():
 
 
 if __name__ == '__main__':
-    trainXORProblem()
-    #trainIrisDataset()
+    #trainXORProblem()
+    trainIrisDataset()
     
     
     

@@ -23,11 +23,6 @@ def computeDirection(maxHistory, step_k, gf_k, history_S, history_Y, rho):
 
 	return -r
 
-def lineSearch(func, fprime, x_k, d_k, gf_k, old_fval=None, old_old_fval=None, args=()):
-	alpha_k, fc, gc, old_fval, old_old_fval, gf_kp1 = \
-			line_search_wolfe1(func, fprime, x_k, d_k, gf_k, old_fval, old_old_fval, args=args)
-	return alpha_k, old_fval, old_old_fval, gf_kp1
-
 def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):
 	"""
 	func: callable f(x)
@@ -60,7 +55,7 @@ def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):
 	warnFlag = 0
 	step_k = 0
 
-	gtol = 1e-10
+	gtol = 1e-5
 	gnorm = np.linalg.norm(gf_k, np.inf)
 	lineSearchConverged = True
 	while (not lineSearchConverged or gnorm > gtol) and (step_k < maxIter):
@@ -70,10 +65,8 @@ def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):
 		d_k = computeDirection(maxHistory, step_k, gf_k, history_S, history_Y, rho)
 
 		#lineSearch 
-		#alpha_k, fc, gc, old_fval, old_old_fval, gf_kp1 = \
-			#line_search_wolfe1(func, funcprime, x_k, d_k, gf_k, old_fval, old_old_fval, args=args)
-		alpha_k, old_fval, old_old_fval, gf_kp1 = \
-			lineSearch(func, funcprime, x_k, d_k, gf_k, old_fval, old_old_fval, args)
+		alpha_k, fc, gc, old_fval, old_old_fval, gf_kp1 = \
+			line_search_wolfe1(func, funcprime, x_k, d_k, gf_k, old_fval, old_old_fval, args=args)
 
 		if(alpha_k is None):
 			# Line search failed to find a better solution.
@@ -82,6 +75,9 @@ def fmin_LBFGS(func, x0, funcprime, args=(), maxIter=1000):
 			alpha_k = 0.01
 
 		x_kp1 = x_k + alpha_k * d_k
+
+		if(not lineSearchConverged):
+			gf_kp1 = funcprime(x_kp1, *args)
 
 		if(step_k > maxHistory):
 			history_S.pop(0)
