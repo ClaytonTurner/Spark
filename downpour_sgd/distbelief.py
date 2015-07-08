@@ -62,7 +62,6 @@ class DistBelief:
 		y_section.append(layers[i*len(layers)/machines_y:(i+1)*len(layers)/machines_y])
 	y_flat = [item for sublist in y_section for item in sublist]
 	new_rep = []
-	print "y_section",y_section
 	first_y = True
 	for y in y_section:
 		i = 0
@@ -78,8 +77,6 @@ class DistBelief:
 						index_found += 1
 						increaser += 1
 					prev_index_found = index_found
-					print "y_flat...:",y_flat[index_found+1:]
-					print "index_found",index_found
 					
 				y_flat_used[index_found] = True
 				start = index_found
@@ -90,13 +87,10 @@ class DistBelief:
 				end = y_flat.index(mach)
 				while(y_flat_used[end] == True):
 					end = y_flat[end+1:].index(mach) + end + 1
-					print "end:",end
 			y_flat_used[i] = True
-			print "y_flat_used",y_flat_used
 			i += 1
 		temp_rep = []
 		for i in range(len(y_flat)):
-			print "start:",start,"end:",end
 			if i >= start and i <= end:
 				temp_rep.append(y_flat[i])
 			else:
@@ -107,7 +101,7 @@ class DistBelief:
 	##############################################
 	# Set up the parallelization nodes for the x #
 	##############################################
-	print "layers:",layers
+	print "NN Layers:",layers
 	final_rep = []
 	for mach in new_rep:
 		odd_added = False
@@ -123,7 +117,7 @@ class DistBelief:
 					odd_added = True
 			final_rep.append(temp_final_rep)
 
-	print final_rep 
+	print "Distbelief Node Distribution:",final_rep 
 	############################
 	# Parallelization complete #
 	############################
@@ -139,6 +133,8 @@ class DistBelief:
         # output layer - random((2+1, 1)) : 3 x 1
         r = 2*np.random.random( (layers[i] + 1, layers[i+1])) - 1
         self.weights.append(r)
+	
+	# END __init__
 
     def set_weights(self,params):
 	self.weights = params
