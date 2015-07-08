@@ -1,14 +1,6 @@
 import numpy as np
 import scipy.optimize as opti
 import lbfgs
-
-
-def sigmoid(x):
-    return 1.0/(1.0 + np.exp(-x))
-
-def sigmoid_prime(x):
-    return sigmoid(x)*(1.0-sigmoid(x))
-
 def tanh(x):
     return np.tanh(x)
 
@@ -21,22 +13,29 @@ class NeuralNetwork:
     def __init__(self, layers):
         self.activation = tanh
         self.activation_prime = tanh_prime
-
+        self.numberOfLayers = len(layers)
         # compute weight layer sizes and shapes
         self.sizes = [] # store weight layer divisions in the flattened weight array
         self.shapes = [] # store weight layer shapes for reshaping
-        # input and hidden layers - (2+1, 2+1) : 3 x 3
-        for i in range(1, len(layers)-1):
-            self.sizes.append((layers[i-1] + 1) * (layers[i] + 1))
-            self.shapes.append((layers[i-1] + 1, layers[i] + 1))
         
-        # output layer - (2+1, 1) : 3 x 1
+
+        #Wij is the weight from node i in layer l-1 to node j in layer l
+        #for a NN with layers = [2,2,2] :
+            # input and hidden layers - (2+1, 2) : 3 x 2
+            # output layer - (2+1, 2) : 3 x 2
+        for i in range(1, len(layers)-1):
+            self.sizes.append((layers[i-1] + 1) * layers[i])
+            self.shapes.append((layers[i-1] + 1, layers[i]))
+        
         self.sizes.append((layers[i] + 1) * layers[i+1])
         self.shapes.append((layers[i] + 1, layers[i+1]))
 
         self.weights = 2 * np.random.rand(sum(self.sizes)) - 1
 
     def get_weights(self):
+        """
+        Returns the flattened parameter array
+        """
         return self.weights
 
     def set_weights(self,params):
@@ -56,11 +55,11 @@ class NeuralNetwork:
     def feed_forward(self, x_, weights):
 
         # iterate through each layer in the network computing and forward propagating activation values
-        x = np.hstack((1, x_)) # add bias unit with value 1.0
-        a = [x] # store activation values for each hidden and output layer node
+        a = [x_] # stores output values for each layer
 
-        for i in range(len(weights)):
-            a_ = self.activation(np.dot(a[i], weights[i]))
+        for i in range(self.numberOfLayers - 1):
+            inputs = np.hstack((1, a[i])) #add the biases node
+            a_ = self.activation(np.dot(inputs, weights[i]))
             a.append(a_) # record current layer activation values
         return a, a_
 
@@ -71,8 +70,10 @@ class NeuralNetwork:
         deltas = [error * self.activation_prime(activations[-1])] 
 
         # iterate through layer activation values in reverse order computing delta_l
-        for i in reversed(range(1, len(weights))):
-            deltas.append(deltas[-1].dot(weights[i].T)*self.activation_prime(activations[i]))
+        for i in range(self.numberOfLayers - 2, 0, -1):
+            weights_tmp = weights[i][1:] #remove biases node weights
+            d = deltas[-1].dot(weights_tmp.T) * self.activation_prime(activations[i])
+            deltas.append(d)
 
         deltas.reverse()
         
@@ -80,11 +81,10 @@ class NeuralNetwork:
         # 1. Multiply its output delta and input activation 
         #    to get the gradient of the weight.
         grad = np.array(())
-        for i in range(len(weights)):
-            layer = np.atleast_2d(activations[i])
-            delta = np.atleast_2d(deltas[i])
-            dot_value  = layer.T.dot(delta)
-            grad = np.hstack((grad, dot_value.flatten()))
+        for i in range(self.numberOfLayers - 1):
+            a_tmp = np.hstack((1, activations[i]))
+            delta_l =  np.outer(deltas[i], a_tmp).T
+            grad = np.hstack((grad, delta_l.flatten()))
 
         return grad
 
@@ -113,8 +113,7 @@ class NeuralNetwork:
         for i, x in enumerate(X):
             a, h_x = self.feed_forward(x, weights)
             for k in range(len(h_x)):
-                #cost_sum += (y[i]*np.log(h_x[0]) + (1- y[i])*np.log(1-h_x))
-                cost_sum += (h_x[k] - y[i][k])**2
+                cost_sum += (y[i][k] - h_x[k])**2
 
         return cost_sum / m
 
@@ -122,10 +121,10 @@ class NeuralNetwork:
 
         for k in range(epochs):
             self.weights = lbfgs.fmin_LBFGS(self.cost, self.weights, self.jac, args=(X,y))
-            #self.weights = opti.fmin_bfgs(self.cost, self.weights, fprime=self.jac, args=(X, y), gtol=1e-50, maxiter=200)
 
-            #gradients = self.jac(self.weights, X, y)
-            #self.weights -= 0.2 * gradients
+            #for computing using sdg algorithm (also set epochs to a large number):
+                #gradients = self.jac(self.weights, X, y)
+                #self.weights -= 0.2 * gradients
 
     def predict(self, x):
         weights = self.unpack_parameters(self.weights)
@@ -135,9 +134,7 @@ class NeuralNetwork:
 
 def trainXORProblem():
     print "This is a test of the neural net on the XOR problem\n"
-    #nn = NeuralNetwork([2,2,1])
-    #y = np.array([[0], [1], [1], [0]])
-    nn = NeuralNetwork([2,2,2])
+    nn = NeuralNetwork([2,5,2])
     y = np.array([[1,0],[0,1],[0,1],[1,0]])
     
     X = np.array([[0, 0],
@@ -178,8 +175,8 @@ def trainIrisDataset():
 
 
 if __name__ == '__main__':
-    #trainXORProblem()
-    trainIrisDataset()
+    trainXORProblem()
+    #trainIrisDataset()
     
     
     
