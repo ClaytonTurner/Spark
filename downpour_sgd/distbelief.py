@@ -21,19 +21,21 @@ def tanh_prime(x):
 
 class Node:
 	
-	def __init__(self,weight,machine_on,connections_to):
+	def __init__(self,weight,machine_on):
 		self.weight = weight
 		self.machine_on = machine_on # So we know whether to go to a new machine through connections
-		self.connections_to = connections_to # This is a list of nodes
-			# We will check their machine_on values to know when comm needs to happen
 	def get_machine(self):
 		return self.machine_on
-	def get_connections(self):
-		return self.connections_to
+	def set_machine(self,mach_on):
+		self.machine_on = mach_on
+	def get_weight(self):
+		return self.weight
+	def set_weight(self,w):
+		self.weight = w
 
 class DistBelief:
 
-    def __init__(self, layers, activation='tanh', machines=[2,2]):
+    def __init__(self, layers, machine_index, activation='tanh', machines=[2,2]):
         if activation == 'sigmoid':
             self.activation = sigmoid
             self.activation_prime = sigmoid_prime
@@ -121,18 +123,34 @@ class DistBelief:
 	############################
 	# Parallelization complete #
 	############################
-
+	dist_net = final_rep[machine_index]
+	print "Current Distbelief Node:",dist_net
         # Set weights
         self.weights = []
         # range of weight values (-1,1)
         # input and hidden layers
+	for i in range(1, len(layers) - 1):
+		r = 2 * np.random.random(( layers[i-1] + 1, layers[i] + 1 )) - 1
+		if dist_net[i] == 0: # This machine isn't responsible for maintaining this node
+			for index,item in enumerate(r):
+				r[index] = 0.0 # We know our weights will never randomize
+					# to zero and this way flags and prevents NaNs
+		print r
+		n = Node(r,machine_index)
+		self.weights.append(n)
+	for node in self.weights:
+		print "node.get_weight()",node.get_weight()
+	#print self.weights	 
+	'''
         for i in range(1, len(layers) - 1):
             r = 2*np.random.random((layers[i-1] + 1, layers[i] + 1)) - 1
 	    #n = Node(r, , )
+	    print "r",r
             self.weights.append(r)#n)
         # output layer - random((2+1, 1)) : 3 x 1
         r = 2*np.random.random( (layers[i] + 1, layers[i+1])) - 1
         self.weights.append(r)
+	'''
 	
 	# END __init__
 
@@ -197,7 +215,7 @@ if __name__ == '__main__':
     #layers = [2,4,4,2]
     #layers = [2,3,3,2]
     #layers = [2,4,4,4,4,4,4,2]
-    nn = DistBelief(layers)
+    nn = DistBelief(layers,1)
     X = np.array([[0, 0],
                   [0, 1],
                   [1, 0],
