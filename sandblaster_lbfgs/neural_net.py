@@ -71,10 +71,10 @@ class NeuralNetwork:
             
             transp_weights = weights[i].T
             
-            #acc = [inputs.dot(w) for w in transp_weights]
+            acc = [inputs.dot(w) for w in transp_weights]
 
             #parallelacc = [pool.apply(weight_inputs, args=(inputs, w,)) for w in transp_weights]
-            #a_ = self.activation(parallelacc)
+            a_ = self.activation(acc)
             
             # a_ = np.empty(transp_weights.shape[0])
             # shard_size = transp_weights.shape[0]/3
