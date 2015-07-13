@@ -1,12 +1,21 @@
 import numpy as np
-import scipy.optimize as opti
 import lbfgs
+from multiprocessing import Pool, Array
+import time
+
 def tanh(x):
     return np.tanh(x)
 
 def tanh_prime(x):
     return 1.0 - x**2
 
+def weight_inputs(inputs, node_weights):
+    return inputs.dot(node_weights)
+
+def comput_nodes_outputs(inputs, nodes_weights, activation_function):
+    return activation_function([inputs.dot(w) for w in nodes_weights])
+    
+pool = Pool(3)
 
 class NeuralNetwork:
 
@@ -56,9 +65,26 @@ class NeuralNetwork:
         # iterate through each layer in the network computing and forward propagating activation values
         a = [x]
         for i in range(self.numberOfLayers - 1):
+
             inputs = np.hstack((1, a[i])) #add the biases node
-            a_ = self.activation(np.dot(inputs, weights[i]))
+            # a_ = self.activation(np.dot(inputs, weights[i]))
+            
+            transp_weights = weights[i].T
+            
+            #acc = [inputs.dot(w) for w in transp_weights]
+
+            #parallelacc = [pool.apply(weight_inputs, args=(inputs, w,)) for w in transp_weights]
+            #a_ = self.activation(parallelacc)
+            
+            # a_ = np.empty(transp_weights.shape[0])
+            # shard_size = transp_weights.shape[0]/3
+            # for shard_start in range(0, transp_weights.shape[0], shard_size):
+            #     shard_end = min(shard_start + shard_size, transp_weights.shape[0])
+            #     args = (inputs, transp_weights[shard_start:shard_end], self.activation)
+            #     a_[shard_start:shard_end] = pool.apply(comput_nodes_outputs, args=args)
+
             a.append(a_) # record current layer activation values
+
         return a, a_
 
     def backward_prop(self, y, activations, weights):
@@ -158,9 +184,10 @@ def trainIrisDataset():
         y.append(ys)
     y = np.asarray(y)
 
-
+    import time
+    start = time.time()
     nn.fit(X, y)
-
+    print time.time() - start
     correct = 0
     for i, e in enumerate(X):
         #print(e,nn.predict(e))
@@ -170,10 +197,11 @@ def trainIrisDataset():
             correct += 1
     print "Correct: ",correct,"/",i,"(",float(correct)/float(i),"%)"
 
-
 if __name__ == '__main__':
+       
+    start = time.time()
     #trainXORProblem()
     trainIrisDataset()
-    
+    print "execution time: ", time.time() - start
     
     
