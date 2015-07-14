@@ -19,23 +19,30 @@ def tanh(x):
 def tanh_prime(x):
     return 1.0 - x**2
 
+'''
 class Node:
 	
-	def __init__(self,weight,machine_on):
-		self.weight = weight
+	def __init__(self,weights,machine_on):
+		self.weights = weights
 		self.machine_on = machine_on # So we know whether to go to a new machine through connections
 	def get_machine(self):
 		return self.machine_on
+	def __getitem__(self,index):
+		return self.weights[index]
 	def set_machine(self,mach_on):
 		self.machine_on = mach_on
-	def get_weight(self):
-		return self.weight
-	def set_weight(self,w):
-		self.weight = w
-
+	def get_weights(self):
+		return self.weights
+	def set_weights(self,w):
+		self.weights = w
+'''
 class DistBelief:
+    '''    
+    This class will be responsible for delegating the models to the individual 'worker' machines 
+    Think of this class as the DistBelief manager
+    '''    
 
-    def __init__(self, layers, machine_index, activation='tanh', machines=[2,2]):
+    def __init__(self, layers, activation='tanh', machines=[2,2]):
         if activation == 'sigmoid':
             self.activation = sigmoid
             self.activation_prime = sigmoid_prime
@@ -54,7 +61,7 @@ class DistBelief:
 	machines_x,machines_y = machines
 	machine_nodes = [[] for i in range(sum(machines))] #list of lists. each top level list represents a machine
 			   # each sublist represents nodes at that layer
-
+	
 	##############################################
 	# Set up the parallelization nodes for the y #
 	##############################################
@@ -123,34 +130,47 @@ class DistBelief:
 	############################
 	# Parallelization complete #
 	############################
-	dist_net = final_rep[machine_index]
-	print "Current Distbelief Node:",dist_net
-        # Set weights
-        self.weights = []
+	dist_net = final_rep
+	
+	###################################################
+	# Determine which weights need to be communicated #
+	###################################################
+	acc = 0
+	for i in range(1,len(dist_net)):
+		mach = dist_net[i-1]
+		my_layers = np.asarray(dist_net).T
+		for j in range(1,len(my_layers)):# 1 because the first layer doesn't need comm
+			my_layer = my_layers[j]
+			if j == len(dist_net)/machines_y: # Check if we crossed a machine boundary and need to transmit all weights
+				acc += sum(my_layer)
+			else:
+				for k in range(len(my_layer)):
+					
+					if k == (i-1) or j == k: # means same machine or on same layer so no comm
+						continue
+					elif my_layer[k] != 0: # communicate weight?
+						acc += my_layer[k]
+	
+	print "Comms needed:",acc
+				
+	# Set weights
+        my_weights = []
         # range of weight values (-1,1)
-        # input and hidden layers
+        # Create initial weights. Currently bias feeds back into weights. Not ideal
 	for i in range(1, len(layers) - 1):
 		r = 2 * np.random.random(( layers[i-1] + 1, layers[i] + 1 )) - 1
-		if dist_net[i] == 0: # This machine isn't responsible for maintaining this node
-			for index,item in enumerate(r):
-				r[index] = 0.0 # We know our weights will never randomize
-					# to zero and this way flags and prevents NaNs
-		print r
-		n = Node(r,machine_index)
-		self.weights.append(n)
-	for node in self.weights:
-		print "node.get_weight()",node.get_weight()
+		print "r:",r
+		#n = Node(r,machine_index)
+		#my_weights.append(n)
+		my_weights.append(r)
+	self.weights = []
+	
+	for i in range(len(my_weights)):
+		weights_to_one_node = my_weights[i].T # so we can grab weights going to just one node
+		for j in range(len(weight_to_one_node)):
+			pass
+
 	#print self.weights	 
-	'''
-        for i in range(1, len(layers) - 1):
-            r = 2*np.random.random((layers[i-1] + 1, layers[i] + 1)) - 1
-	    #n = Node(r, , )
-	    print "r",r
-            self.weights.append(r)#n)
-        # output layer - random((2+1, 1)) : 3 x 1
-        r = 2*np.random.random( (layers[i] + 1, layers[i+1])) - 1
-        self.weights.append(r)
-	'''
 	
 	# END __init__
 
@@ -211,11 +231,11 @@ if __name__ == '__main__':
 
     print "This is a test of distbelief as a local NN on the XOR problem"
 
-    layers = [2,8,6,4,2] # [input, hidden layers..., output layer]
-    #layers = [2,4,4,2]
+    #layers = [2,8,6,4,2] # [input, hidden layers..., output layer]
+    layers = [2,3,3,2]
     #layers = [2,3,3,2]
     #layers = [2,4,4,4,4,4,4,2]
-    nn = DistBelief(layers,1)
+    nn = DistBelief(layers)
     X = np.array([[0, 0],
                   [0, 1],
                   [1, 0],
